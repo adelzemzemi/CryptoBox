@@ -1,0 +1,84 @@
+{
+  "name": "cryptovault",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Zero-dependency encryption library for JavaScript & TypeScript. Secure localStorage, sessionStorage, or any data with AES-256-GCM encryption. Production-ready with 93% test coverage.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"examples/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"examples/**/*.ts\"",
+    "prepublishOnly": "npm run build && npm test",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "encryption",
+    "storage",
+    "security",
+    "web-crypto",
+    "aes-gcm",
+    "aes-256",
+    "pbkdf2",
+    "crypto",
+    "secure-storage",
+    "token",
+    "vault",
+    "cryptography",
+    "typescript",
+    "browser",
+    "nodejs",
+    "deno",
+    "bun"
+  ],
+  "author": {
+    "name": "Adel Zemzemi",
+    "url": "https://github.com/zemzemi"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zemzemi/cryptovault.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zemzemi/cryptovault/issues"
+  },
+  "homepage": "https://github.com/zemzemi/cryptovault#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^4.0.14",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.15.0",
+    "vitest": "^4.0.14"
+  }
+}

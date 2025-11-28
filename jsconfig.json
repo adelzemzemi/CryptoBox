@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@crypto/*": ["src/crypto/*"],
+      "@security/*": ["src/security/*"],
+      "@utils/*": ["src/utils/*"],
+      "@storage/*": ["src/storage/*"],
+      "@secure-storage/*": ["src/secure-storage/*"],
+      "@factories/*": ["src/factories/*"],
+      "@fingerprint/*": ["src/fingerprint/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
