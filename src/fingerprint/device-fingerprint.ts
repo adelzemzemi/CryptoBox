@@ -17,9 +17,9 @@ async function getCanvasFingerprint(): Promise<string> {
     ctx.fillStyle = '#f60';
     ctx.fillRect(125, 1, 62, 20);
     ctx.fillStyle = '#069';
-    ctx.fillText('CryptoVault 🔒', 2, 15);
+    ctx.fillText('CryptoBox 🔒', 2, 15);
     ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-    ctx.fillText('CryptoVault 🔒', 4, 17);
+    ctx.fillText('CryptoBox 🔒', 4, 17);
 
     // Get canvas data
     const dataUrl = canvas.toDataURL();

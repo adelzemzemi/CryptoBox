@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability, please report it privately:
 
-1. **GitHub Security Advisory** (Preferred): https://github.com/zemzemi/cryptovault/security/advisories/new
+1. **GitHub Security Advisory** (Preferred): https://github.com/zemzemi/cryptobox/security/advisories/new
 2. **Email**: adelzemzemi@hotmail.com
 
 **Do not create public issues for security vulnerabilities.**
@@ -66,7 +66,7 @@ If you discover a security vulnerability, please report it privately:
 This library is regularly updated to address security concerns. Keep your dependencies up to date:
 
 ```bash
-npm update cryptovault
+npm update @azemzemi/cryptobox
 ```
 
 ## Audit History

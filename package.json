@@ -1,5 +1,5 @@
 {
-  "name": "cryptovault",
+  "name": "@azemzemi/cryptobox",
   "version": "1.0.0",
   "type": "module",
   "description": "Zero-dependency encryption library for JavaScript & TypeScript. Secure localStorage, sessionStorage, or any data with AES-256-GCM encryption. Production-ready with 93% test coverage.",
@@ -61,12 +61,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zemzemi/cryptovault.git"
+    "url": "https://github.com/zemzemi/cryptobox.git"
   },
   "bugs": {
-    "url": "https://github.com/zemzemi/cryptovault/issues"
+    "url": "https://github.com/zemzemi/cryptobox/issues"
   },
-  "homepage": "https://github.com/zemzemi/cryptovault#readme",
+  "homepage": "https://github.com/zemzemi/cryptobox#readme",
   "engines": {
     "node": ">=18.0.0"
   },

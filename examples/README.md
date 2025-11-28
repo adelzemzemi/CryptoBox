@@ -1,4 +1,4 @@
-# CryptoVault Examples
+# CryptoBox Examples
 
 ## Files
 

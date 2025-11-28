@@ -1,6 +1,6 @@
-# Contributing to CryptoVault
+# Contributing to CryptoBox
 
-Thank you for considering contributing to CryptoVault! 🎉
+Thank you for considering contributing to CryptoBox! 🎉
 
 ## Code of Conduct
 
@@ -24,7 +24,7 @@ Use the [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md) an
 ### Security Issues
 
 **DO NOT** open public issues. Report privately:
-- GitHub Security Advisory: https://github.com/zemzemi/cryptovault/security/advisories/new
+- GitHub Security Advisory: https://github.com/zemzemi/cryptobox/security/advisories/new
 - Email: adelzemzemi@hotmail.com
 
 See [SECURITY.md](SECURITY.md) for details.
@@ -32,8 +32,8 @@ See [SECURITY.md](SECURITY.md) for details.
 ## Development
 
 ```bash
-git clone https://github.com/zemzemi/cryptovault.git
-cd cryptovault
+git clone https://github.com/zemzemi/cryptobox.git
+cd cryptobox
 npm install
 npm run build
 npm test
@@ -88,8 +88,8 @@ security(crypto): increase PBKDF2 iterations
 
 ## Questions?
 
-- [GitHub Discussions](https://github.com/zemzemi/cryptovault/discussions)
-- [GitHub Issues](https://github.com/zemzemi/cryptovault/issues)
+- [GitHub Discussions](https://github.com/zemzemi/cryptobox/discussions)
+- [GitHub Issues](https://github.com/zemzemi/cryptobox/issues)
 - Email: adelzemzemi@hotmail.com
 
 Thank you for contributing! 🚀

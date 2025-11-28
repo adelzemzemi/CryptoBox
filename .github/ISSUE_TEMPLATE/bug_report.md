@@ -32,7 +32,7 @@ What actually happened.
 
 ## Environment
 
-- **CryptoVault Version**: (e.g., 1.0.0)
+- **CryptoBox Version**: (e.g., 1.0.0)
 - **Platform**: (Browser / Node.js / Deno / Bun)
 - **Node Version**: (if applicable, e.g., 18.0.0)
 - **Browser**: (if applicable, e.g., Chrome 120)

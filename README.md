@@ -1,15 +1,15 @@
-# CryptoVault
+# CryptoBox
 
 Secure encryption and storage for JavaScript & TypeScript.
 
-[![npm version](https://img.shields.io/npm/v/cryptovault.svg)](https://www.npmjs.com/package/cryptovault)
+[![npm version](https://img.shields.io/npm/v/@azemzemi/cryptobox.svg)](https://www.npmjs.com/package/@azemzemi/cryptobox)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![GitHub](https://img.shields.io/badge/GitHub-zemzemi%2Fcryptovault-blue.svg)](https://github.com/zemzemi/cryptovault)
+[![GitHub](https://img.shields.io/badge/GitHub-zemzemi%2Fcryptobox-blue.svg)](https://github.com/zemzemi/cryptobox)
 
 Zero dependencies • AES-256-GCM • Type-safe • Cross-platform
 
-## Why CryptoVault?
+## Why CryptoBox?
 
 - **🔒 Secure by Default** - Military-grade AES-256-GCM encryption
 - **📦 Zero Dependencies** - No supply chain vulnerabilities
@@ -21,13 +21,13 @@ Zero dependencies • AES-256-GCM • Type-safe • Cross-platform
 ## Install
 
 ```bash
-npm install cryptovault
+npm install @azemzemi/cryptobox
 ```
 
 ## Usage
 
 ```typescript
-import { createSecureLocalStorage } from 'cryptovault';
+import { createSecureLocalStorage } from '@azemzemi/cryptobox';
 
 const storage = createSecureLocalStorage();
 
@@ -69,7 +69,7 @@ createSecureMemoryStorage()     // Universal: in-memory
 ### Encryption
 
 ```typescript
-import { AesGcmEncryptor } from 'cryptovault';
+import { AesGcmEncryptor } from '@azemzemi/cryptobox';
 
 const encryptor = new AesGcmEncryptor();
 const encrypted = await encryptor.encrypt(data, 'password');
@@ -79,7 +79,7 @@ const decrypted = await encryptor.decrypt(encrypted, 'password');
 ### Custom Storage
 
 ```typescript
-import { SecureStorage, AesGcmEncryptor, IStorage } from 'cryptovault';
+import { SecureStorage, AesGcmEncryptor, IStorage } from '@azemzemi/cryptobox';
 
 class MyStorage implements IStorage {
   setItem(key: string, value: string): void { }

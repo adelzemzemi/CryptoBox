@@ -14,4 +14,4 @@ All notable changes to this project will be documented in this file.
 - Cross-platform (Browser, Node.js 18+, Deno, Bun)
 - 93% test coverage
 
-[1.0.0]: https://github.com/zemzemi/cryptovault/releases/tag/v1.0.0
+[1.0.0]: https://github.com/zemzemi/cryptobox/releases/tag/v1.0.0
