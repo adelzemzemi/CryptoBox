@@ -1,6 +1,6 @@
 {
   "name": "@azemzemi/cryptobox",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Zero-dependency encryption library for JavaScript & TypeScript. Secure localStorage, sessionStorage, or any data with AES-256-GCM encryption. Production-ready with 93% test coverage.",
   "main": "dist/index.js",
@@ -22,8 +22,8 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
+    "build": "tsup",
+    "build:watch": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -76,6 +76,7 @@
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.20.6",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.15.0",
