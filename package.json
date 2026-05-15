@@ -1,6 +1,6 @@
 {
   "name": "@azemzemi/cryptobox",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "Zero-dependency encryption library for JavaScript & TypeScript. Secure localStorage, sessionStorage, or any data with AES-256-GCM encryption. Production-ready with 93% test coverage.",
   "main": "dist/index.js",
