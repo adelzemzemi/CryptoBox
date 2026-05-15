@@ -24,15 +24,15 @@ Use the [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md) an
 ### Security Issues
 
 **DO NOT** open public issues. Report privately:
-- GitHub Security Advisory: https://github.com/zemzemi/cryptobox/security/advisories/new
-- Email: adelzemzemi@hotmail.com
+- GitHub Security Advisory: https://github.com/adelzemzemi/cryptobox/security/advisories/new
+- Email: hello@adelzemzemi.dev
 
 See [SECURITY.md](SECURITY.md) for details.
 
 ## Development
 
 ```bash
-git clone https://github.com/zemzemi/cryptobox.git
+git clone https://github.com/adelzemzemi/cryptobox.git
 cd cryptobox
 npm install
 npm run build
@@ -88,8 +88,8 @@ security(crypto): increase PBKDF2 iterations
 
 ## Questions?
 
-- [GitHub Discussions](https://github.com/zemzemi/cryptobox/discussions)
-- [GitHub Issues](https://github.com/zemzemi/cryptobox/issues)
-- Email: adelzemzemi@hotmail.com
+- [GitHub Discussions](https://github.com/adelzemzemi/cryptobox/discussions)
+- [GitHub Issues](https://github.com/adelzemzemi/cryptobox/issues)
+- Email: hello@adelzemzemi.dev
 
 Thank you for contributing! 🚀

@@ -5,7 +5,7 @@ Secure encryption and storage for JavaScript & TypeScript.
 [![npm version](https://img.shields.io/npm/v/@azemzemi/cryptobox.svg)](https://www.npmjs.com/package/@azemzemi/cryptobox)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![GitHub](https://img.shields.io/badge/GitHub-zemzemi%2Fcryptobox-blue.svg)](https://github.com/zemzemi/cryptobox)
+[![GitHub](https://img.shields.io/badge/GitHub-zemzemi%2Fcryptobox-blue.svg)](https://github.com/adelzemzemi/cryptobox)
 
 Zero dependencies • AES-256-GCM • Type-safe • Cross-platform
 

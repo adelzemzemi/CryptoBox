@@ -4,8 +4,8 @@
 
 If you discover a security vulnerability, please report it privately:
 
-1. **GitHub Security Advisory** (Preferred): https://github.com/zemzemi/cryptobox/security/advisories/new
-2. **Email**: adelzemzemi@hotmail.com
+1. **GitHub Security Advisory** (Preferred): https://github.com/adelzemzemi/cryptobox/security/advisories/new
+2. **Email**: hello@adelzemzemi.com
 
 **Do not create public issues for security vulnerabilities.**
 

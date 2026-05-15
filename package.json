@@ -56,17 +56,17 @@
   ],
   "author": {
     "name": "Adel Zemzemi",
-    "url": "https://github.com/zemzemi"
+    "url": "https://github.com/adelzemzemi"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zemzemi/cryptobox.git"
+    "url": "https://github.com/adelzemzemi/cryptobox.git"
   },
   "bugs": {
-    "url": "https://github.com/zemzemi/cryptobox/issues"
+    "url": "https://github.com/adelzemzemi/cryptobox/issues"
   },
-  "homepage": "https://github.com/zemzemi/cryptobox#readme",
+  "homepage": "https://github.com/adelzemzemi/cryptobox#readme",
   "engines": {
     "node": ">=18.0.0"
   },
