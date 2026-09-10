@@ -25,7 +25,7 @@ Use the [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md) an
 
 **DO NOT** open public issues. Report privately:
 - GitHub Security Advisory: https://github.com/adelzemzemi/cryptobox/security/advisories/new
-- Email: hello@adelzemzemi.dev
+- Email: hello@adelzemzemi.com
 
 See [SECURITY.md](SECURITY.md) for details.
 
@@ -90,6 +90,6 @@ security(crypto): increase PBKDF2 iterations
 
 - [GitHub Discussions](https://github.com/adelzemzemi/cryptobox/discussions)
 - [GitHub Issues](https://github.com/adelzemzemi/cryptobox/issues)
-- Email: hello@adelzemzemi.dev
+- Email: hello@adelzemzemi.com
 
 Thank you for contributing! 🚀
