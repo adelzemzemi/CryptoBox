@@ -21,7 +21,8 @@ jobs:
     environment: npm-publish
     permissions:
       contents: read
-      # Required for npm provenance.
+      # Lets npm exchange a short-lived OIDC token for publish rights (trusted
+      # publishing), so no long-lived npm token is stored in this repository.
       id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,7 +36,8 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '20'
+          # Trusted publishing needs npm 11.5.1 or later, which Node 24 ships.
+          node-version: '24'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
@@ -71,11 +73,7 @@ jobs:
       - name: Publish
         if: github.event_name == 'push' || inputs.dry-run == false
         run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Dry run
         if: github.event_name == 'workflow_dispatch' && inputs.dry-run
         run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }} --dry-run
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
