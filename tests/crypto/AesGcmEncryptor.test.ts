@@ -122,13 +122,28 @@ describe('AesGcmEncryptor', () => {
 
     it('should honour an explicit policy over the instance count', async () => {
       const encrypted = await encryptor.encrypt({ a: 1 }, password);
-      const strict = new AesGcmEncryptor({
-        iterations: 1000,
+      const lenient = new AesGcmEncryptor({
+        iterations: 5000,
         allowWeakIterations: true,
-        rewrapPolicy: { minIterations: 5000 },
+        rewrapPolicy: { minIterations: 1000 },
       });
 
-      expect(strict.needsRewrap(encrypted)).toBe(true);
+      // The instance count alone would flag a 1000-iteration ciphertext.
+      expect(lenient.needsRewrap(encrypted)).toBe(false);
+    });
+
+    it('should refuse a policy stricter than what the instance writes', () => {
+      const unsatisfiable = [
+        { iterations: 100_000, rewrapPolicy: { minIterations: 600_000 } },
+        { rewrapPolicy: { minIterations: 600_001 } },
+        { rewrapPolicy: { minVersion: 3 } },
+      ];
+
+      for (const options of unsatisfiable) {
+        expect(() => new AesGcmEncryptor(options)).toThrow(
+          expect.objectContaining({ code: 'INVALID_ARGUMENT' })
+        );
+      }
     });
   });
 });

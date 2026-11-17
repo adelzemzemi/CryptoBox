@@ -26,8 +26,13 @@ binding to data written by 1.0.x.
   `dist/index.cjs`, with per-condition `types` in the `exports` map. Verified in CI by
   `are-the-types-wrong`, `publint`, and a smoke test that installs the packed tarball and imports
   it from both CJS and ESM.
-- Malformed base64 escaped as a runtime-specific `InvalidCharacterError` instead of the uniform
-  decryption failure message.
+- Malformed base64 escaped as a runtime-specific `InvalidCharacterError`. It is now reported as
+  `MALFORMED_CIPHERTEXT`.
+- A JSON syntax error on the read path quoted the start of the decrypted plaintext in its message,
+  which then reached logs and error reporting. The message is now fixed text.
+- A validator that throws is reported as `VALIDATION_FAILED` instead of escaping as a raw error.
+- A missing Web Crypto implementation (a page served over plain http) is reported as
+  `UNSUPPORTED_ENVIRONMENT` instead of a bare `TypeError`.
 - `SecureStorage.getSecure()` embedded the storage key in the error message on failure, undoing
   the intent of the generic message.
 - `null` could be encrypted but not decrypted; `undefined` silently produced a non-string from
@@ -54,6 +59,13 @@ binding to data written by 1.0.x.
   stored under by default. Previously an attacker with write access to `localStorage` could swap
   two stored values and both would still decrypt; the application saw authentic plaintext in the
   wrong place. Disable with `{ bindToKey: false }` where ciphertexts must stay transferable.
+  Values written by 1.x carry no binding and stay swappable until they are migrated with
+  `rewrap()` and `allowLegacy` is turned off.
+- **A password must be a string, and a non-empty one to encrypt.** `undefined` and `null` were
+  coerced, so a missing form field or environment variable encrypted under `''` or `'null'`.
+  Data written by 1.x under an empty password still decrypts.
+- A context holding a lone surrogate is refused with `INVALID_ARGUMENT`: UTF-8 encodes every lone
+  surrogate the same way, so two such contexts would have bound identically.
 - A wrong password and a corrupted ciphertext now fail identically, so the error is not a
   decryption oracle.
 - **Writing below 100,000 iterations is refused** with `INVALID_ITERATIONS`. The count was
@@ -83,7 +95,8 @@ binding to data written by 1.0.x.
   `needsRewrap()` compares them against a policy, and `rewrap()` re-encrypts under the current
   format. `SecureStorage` exposes `needsRewrap(key)` and `rewrap(key, password)`. `rewrap` only
   reports a value as current after decrypting it, because a 1.x ciphertext can, rarely, start with
-  bytes that read like a current header.
+  bytes that read like a current header. It re-reads the value before writing it back and leaves
+  it alone if another writer changed it in the meantime.
 - Configurable iteration count via `new AesGcmEncryptor({ iterations })`, per instance or per call.
 - `IEnumerableStorage`, so `MemoryStorage.keys()` and `.clear()` are part of a contract rather than
   implementation details invisible through `IStorage`.
@@ -108,7 +121,7 @@ binding to data written by 1.0.x.
 - `getSecure()` returns `null` for a stored `null` as well as for an absent key, now that `null`
   round-trips. Use `has()` to tell them apart.
 - `AesGcmEncryptor` validates its options at construction instead of failing on the first
-  `encrypt()`.
+  `encrypt()`, and refuses a `rewrapPolicy` stricter than what it writes.
 - `SecureStorage.has()` and `.getSecure()` now agree on a stored empty string: both treat it as
   absent. `has()` used to report `true` for a value `getSecure()` returned `null` for.
 

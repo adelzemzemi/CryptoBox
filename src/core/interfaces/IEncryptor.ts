@@ -1,6 +1,12 @@
 import type { EncryptOptions, TypedDecryptOptions } from '../options.js';
 
-/** Encrypts and decrypts arbitrary values, handling serialization itself. */
+/**
+ * Encrypts and decrypts arbitrary values, handling serialization itself.
+ *
+ * An implementation that ignores `options.context` gives up key binding, and one
+ * that ignores `options.allowLegacy` gives up downgrade protection: `SecureStorage`
+ * passes both and has no way to check that they were honoured.
+ */
 export interface IEncryptor {
   /**
    * Serialize and encrypt a value.

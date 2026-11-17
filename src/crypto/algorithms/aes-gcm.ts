@@ -14,6 +14,7 @@ import {
   type Envelope,
 } from '../envelope.js';
 import { CryptoBoxError, isCryptoBoxError } from '../../core/errors.js';
+import { assertContext, assertPassword, assertWritePassword, requireWebCrypto } from '../guards.js';
 import type { DecryptOptions, EncryptOptions } from '../../core/options.js';
 import {
   SALT_SIZE,
@@ -79,7 +80,7 @@ async function tryDecrypt(
   const aad = envelopeAad(envelope, context);
 
   try {
-    const decrypted = await crypto.subtle.decrypt(
+    const decrypted = await requireWebCrypto().subtle.decrypt(
       aad
         ? {
             name: ENCRYPTION_ALGORITHM,
@@ -104,6 +105,7 @@ async function tryDecrypt(
  * @param options - Iteration count and context binding
  * @returns Base64-encoded version 2 envelope
  * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range or too low
+ * @throws CryptoBoxError `INVALID_ARGUMENT` if the password is empty or the context is ill-formed
  */
 export async function encrypt(
   plaintext: string,
@@ -111,17 +113,22 @@ export async function encrypt(
   options: EncryptOptions = {}
 ): Promise<string> {
   const iterations = options.iterations ?? PBKDF2_ITERATIONS;
+  const context = options.context ?? '';
+
+  assertWritePassword(password);
+  assertContext(context);
   assertWritableIterations(iterations, options.allowWeakIterations ?? false);
 
-  const salt = crypto.getRandomValues(new Uint8Array(SALT_SIZE));
-  const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
+  const webCrypto = requireWebCrypto();
+  const salt = webCrypto.getRandomValues(new Uint8Array(SALT_SIZE));
+  const iv = webCrypto.getRandomValues(new Uint8Array(IV_SIZE));
   const header = buildHeader(iterations);
-  const aad = buildAad(header, options.context ?? '');
+  const aad = buildAad(header, context);
 
   const key = await deriveKey(password, salt, iterations);
 
   const body = new Uint8Array(
-    await crypto.subtle.encrypt(
+    await webCrypto.subtle.encrypt(
       { name: ENCRYPTION_ALGORITHM, iv: iv as BufferSource, additionalData: aad as BufferSource },
       key,
       new TextEncoder().encode(plaintext) as BufferSource
@@ -150,6 +157,11 @@ export async function decrypt(
   password: string,
   options: DecryptOptions = {}
 ): Promise<string> {
+  const context = options.context ?? '';
+
+  assertPassword(password);
+  assertContext(context);
+
   const bytes = decodeEnvelopeBytes(ciphertext);
   const allowLegacy = options.allowLegacy ?? true;
   const candidates = envelopeCandidates(bytes, allowLegacy);
@@ -170,8 +182,6 @@ export async function decrypt(
         'Migrate the data with rewrap() before disabling legacy reads.'
     );
   }
-
-  const context = options.context ?? '';
 
   for (const envelope of candidates) {
     const plaintext = await tryDecrypt(envelope, password, context);

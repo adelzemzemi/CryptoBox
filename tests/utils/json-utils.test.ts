@@ -115,3 +115,26 @@ describe('JSON Utilities', () => {
     });
   });
 });
+
+describe('safeJsonParse and confidentiality', () => {
+  it('should not quote the input in a syntax error', () => {
+    const secret = 'sk_live_SECRET';
+
+    expect(() => safeJsonParse(secret)).toThrow(
+      expect.objectContaining({ code: 'DESERIALIZATION_FAILED', message: 'Invalid JSON syntax' })
+    );
+  });
+
+  it('should report a validator that throws as a validation failure', () => {
+    const throwing = (value: unknown): value is { id: number } => {
+      return (value as { nested: { id: number } }).nested.id > 0;
+    };
+
+    expect(() => safeJsonParse('{"secret":"sk_live_SECRET"}', throwing)).toThrow(
+      expect.objectContaining({
+        code: 'VALIDATION_FAILED',
+        message: expect.not.stringContaining('sk_live'),
+      })
+    );
+  });
+});

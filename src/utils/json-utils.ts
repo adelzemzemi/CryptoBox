@@ -12,19 +12,27 @@ import { CryptoBoxError, describeCause } from '../core/errors.js';
  * @throws CryptoBoxError `DESERIALIZATION_FAILED` if the JSON is malformed
  * @throws CryptoBoxError `VALIDATION_FAILED` if the validator rejects the value
  */
+function runValidator(validator: (data: unknown) => boolean, parsed: unknown): boolean {
+  try {
+    return validator(parsed);
+  } catch {
+    // A validator written for one shape commonly throws on another; that is a
+    // rejection. Its message may quote the payload, so it is not passed on.
+    throw new CryptoBoxError('VALIDATION_FAILED', 'JSON validation failed: the validator threw');
+  }
+}
+
 export function safeJsonParse<T>(json: string, validator?: (data: unknown) => data is T): T {
   let parsed: unknown;
 
   try {
     parsed = JSON.parse(json);
-  } catch (error) {
-    throw new CryptoBoxError(
-      'DESERIALIZATION_FAILED',
-      `Invalid JSON syntax: ${describeCause(error)}`
-    );
+  } catch {
+    // The parser's own message quotes the input, which here is decrypted plaintext.
+    throw new CryptoBoxError('DESERIALIZATION_FAILED', 'Invalid JSON syntax');
   }
 
-  if (validator && !validator(parsed)) {
+  if (validator && !runValidator(validator, parsed)) {
     throw new CryptoBoxError(
       'VALIDATION_FAILED',
       'JSON validation failed: data does not match expected type'

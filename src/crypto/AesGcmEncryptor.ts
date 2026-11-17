@@ -3,6 +3,8 @@ import type { EncryptOptions, TypedDecryptOptions } from '../core/options.js';
 import { encrypt, decrypt, needsRewrap, type RewrapPolicy } from './algorithms/aes-gcm.js';
 import { safeJsonStringify, safeJsonParse } from '../utils/json-utils.js';
 import { assertWritableIterations } from './envelope.js';
+import { CryptoBoxError } from '../core/errors.js';
+import { ENVELOPE_VERSION, PBKDF2_ITERATIONS } from '../core/constants.js';
 
 /** Defaults applied to every operation of an {@link AesGcmEncryptor}. */
 export interface AesGcmEncryptorOptions {
@@ -30,6 +32,7 @@ export class AesGcmEncryptor implements IEncryptor {
   /**
    * @param options - Per-instance defaults
    * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range or too low
+   * @throws CryptoBoxError `INVALID_ARGUMENT` if the rewrap policy exceeds what this instance writes
    */
   constructor(options: AesGcmEncryptorOptions = {}) {
     this.allowWeakIterations = options.allowWeakIterations ?? false;
@@ -41,6 +44,18 @@ export class AesGcmEncryptor implements IEncryptor {
     this.iterations = options.iterations;
     this.allowLegacy = options.allowLegacy ?? true;
     this.rewrapPolicy = options.rewrapPolicy ?? {};
+
+    // A policy stricter than what this instance writes can never be satisfied:
+    // every rewrap would produce a value that still needs one.
+    if (
+      (this.rewrapPolicy.minIterations ?? 0) > (this.iterations ?? PBKDF2_ITERATIONS) ||
+      (this.rewrapPolicy.minVersion ?? 0) > ENVELOPE_VERSION
+    ) {
+      throw new CryptoBoxError(
+        'INVALID_ARGUMENT',
+        'Invalid rewrapPolicy: it asks for more than this encryptor writes'
+      );
+    }
   }
 
   /**

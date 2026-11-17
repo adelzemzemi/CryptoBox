@@ -159,9 +159,17 @@ export class SecureStorage implements ISecureStorage {
    * password always throws. A 1.x value that merely looks current is caught here
    * and rewritten.
    *
+   * The value is re-read just before it is written back, and left alone if it
+   * changed in the meantime. That narrows the window for overwriting a concurrent
+   * write; it does not close it, since the backend offers no compare-and-set. Run a
+   * migration from one place at a time.
+   *
+   * A 1.x value carries no key binding, so this binds whatever currently sits
+   * under the key. Migrate from a store you trust.
+   *
    * @param key - Storage key
    * @param password - Password the value was written with
-   * @returns True if the value was rewritten, false if it is absent or already current
+   * @returns True if the value was rewritten; false if it is absent, already current, or changed meanwhile
    * @throws CryptoBoxError if the password is wrong
    */
   async rewrap(key: string, password: string): Promise<boolean> {
@@ -173,11 +181,13 @@ export class SecureStorage implements ISecureStorage {
     }
 
     const data = await this.encryptor.decrypt<unknown>(raw, password, this.decryptOptions(key, {}));
-    await this.storage.setItem(
-      key,
-      await this.encryptor.encrypt(data, password, this.encryptOptions(key))
-    );
+    const rewritten = await this.encryptor.encrypt(data, password, this.encryptOptions(key));
 
+    // Key derivation takes long enough for another writer to get in. Whatever it
+    // wrote is newer than what was just re-encrypted, so it stays.
+    if ((await this.storage.getItem(key)) !== raw) return false;
+
+    await this.storage.setItem(key, rewritten);
     return true;
   }
 }

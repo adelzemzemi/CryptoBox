@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { encrypt, decrypt, inspect, needsRewrap, rewrap } from '@crypto/algorithms/aes-gcm';
 import { encodeBase64, decodeBase64 } from '@crypto/encoding/base64';
 import { encryptV0, collidingSalt } from '../../helpers/v0';
+import { deriveKey } from '@crypto/algorithms/key-derivation';
 import {
   SALT_SIZE,
   IV_SIZE,
@@ -108,6 +109,71 @@ describe('AES-GCM Encryption', () => {
     it('should keep reading a ciphertext written below the minimum', async () => {
       const encrypted = await encrypt(plaintext, password, fast);
       expect(await decrypt(encrypted, password, { allowLegacy: false })).toBe(plaintext);
+    });
+  });
+
+  describe('argument checks', () => {
+    const notStrings = [undefined, null, 42, {}] as unknown as string[];
+
+    it('should refuse a password that is not a string', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+
+      for (const bad of notStrings) {
+        await expect(encrypt(plaintext, bad, fast)).rejects.toMatchObject({
+          code: 'INVALID_ARGUMENT',
+        });
+        await expect(decrypt(encrypted, bad)).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
+        await expect(deriveKey(bad, new Uint8Array(16))).rejects.toMatchObject({
+          code: 'INVALID_ARGUMENT',
+        });
+      }
+    });
+
+    it('should refuse to encrypt under an empty password', async () => {
+      await expect(encrypt(plaintext, '', fast)).rejects.toMatchObject({
+        code: 'INVALID_ARGUMENT',
+      });
+    });
+
+    it('should still read 1.x data that was written under an empty password', async () => {
+      const legacy = await encryptV0(plaintext, '');
+      expect(await decrypt(legacy, '')).toBe(plaintext);
+    });
+
+    it('should refuse a context holding a lone surrogate', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+
+      for (const context of ['k\uD800', '\uDFFFk', 'a\uD800b']) {
+        await expect(encrypt(plaintext, password, { ...fast, context })).rejects.toMatchObject({
+          code: 'INVALID_ARGUMENT',
+        });
+        await expect(decrypt(encrypted, password, { context })).rejects.toMatchObject({
+          code: 'INVALID_ARGUMENT',
+        });
+      }
+    });
+
+    it('should accept a context holding a well-formed surrogate pair', async () => {
+      const context = 'user:\u{1F510}';
+      const encrypted = await encrypt(plaintext, password, { ...fast, context });
+
+      expect(await decrypt(encrypted, password, { context })).toBe(plaintext);
+    });
+
+    it('should report a runtime without Web Crypto as an unsupported environment', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+      vi.stubGlobal('crypto', {});
+
+      try {
+        await expect(encrypt(plaintext, password, fast)).rejects.toMatchObject({
+          code: 'UNSUPPORTED_ENVIRONMENT',
+        });
+        await expect(decrypt(encrypted, password)).rejects.toMatchObject({
+          code: 'UNSUPPORTED_ENVIRONMENT',
+        });
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
   });
 

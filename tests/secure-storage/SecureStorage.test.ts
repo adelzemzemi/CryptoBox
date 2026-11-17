@@ -235,6 +235,28 @@ describe('SecureStorage rewrap', () => {
     expect(await strict.getSecure<{ a: number }>('k', password)).toEqual({ a: 1 });
   });
 
+  it('should leave a value alone when it changed during the rewrap', async () => {
+    const backend = new MemoryStorage();
+    const old = new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true });
+    await new SecureStorage(backend, old).setSecure('k', { items: 1 }, password);
+
+    const current = new AesGcmEncryptor({ iterations: 4000, allowWeakIterations: true });
+    const newer = await current.encrypt({ items: 99 }, password, { context: 'k' });
+
+    // Another writer lands while the migration is busy deriving its key.
+    const interrupted: IEncryptor = {
+      decrypt: (ciphertext, pw, options) => current.decrypt(ciphertext, pw, options),
+      needsRewrap: ciphertext => current.needsRewrap(ciphertext),
+      encrypt: async (data, pw, options) => {
+        backend.setItem('k', newer);
+        return current.encrypt(data, pw, options);
+      },
+    };
+
+    expect(await new SecureStorage(backend, interrupted).rewrap('k', password)).toBe(false);
+    expect(backend.getItem('k')).toBe(newer);
+  });
+
   it('should raise an outdated iteration count', async () => {
     const backend = new MemoryStorage();
 

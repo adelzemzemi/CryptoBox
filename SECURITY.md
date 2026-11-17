@@ -45,8 +45,8 @@ If you discover a security vulnerability, please report it privately:
 **What the package protects.** Data at rest in a store the attacker can read or
 write but where they do not hold the password: a copied browser profile, a backup,
 a synced or shared storage area, a database dump. Without the password the values
-are unreadable, a modified value is rejected, and a value moved to another key or
-context stops decrypting.
+are unreadable, a modified value is rejected, and a value written by 2.x and moved
+to another key or context stops decrypting.
 
 **What it does not protect.**
 
@@ -62,6 +62,13 @@ context stops decrypting.
   password safe. PBKDF2 is not memory-hard, so dedicated hardware tests candidates
   far faster than a browser does. It is used because it is the password-based KDF
   Web Crypto provides, and the package takes no dependencies.
+- **Values written by 1.x, until they are migrated.** They carry no binding. While
+  `allowLegacy` is on, which is the default, an old 1.x ciphertext is accepted
+  under any key. Migrate with `rewrap()` from a store you trust, then set
+  `allowLegacy: false`.
+- **Rollback.** An earlier value of the same key, put back in place, decrypts: the
+  format has no notion of freshness. Keep a counter or a timestamp inside the
+  payload if that matters.
 - **Availability.** Whoever can write to the store can delete or corrupt its
   values. Tampering is detected, not prevented.
 - **Metadata.** Storage keys, the size of each value and when it changes are

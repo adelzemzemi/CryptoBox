@@ -75,8 +75,9 @@ exist. Use `has()` when the difference matters.
 
 ### Typed errors
 
-Every failure is a `CryptoBoxError` carrying a stable `code`. Match on the code, not
-on the message.
+Every failure raised by the package is a `CryptoBoxError` carrying a stable `code`.
+Match on the code, not on the message. Errors thrown by your own storage backend
+(a full quota, a closed database) pass through unchanged.
 
 ```typescript
 import { isCryptoBoxError } from '@azemzemi/cryptobox';
@@ -149,6 +150,14 @@ await storage.setSecure('role:admin', { admin: true }, password);
 
 // Copying the admin ciphertext over the guest key no longer decrypts.
 ```
+
+> [!IMPORTANT]
+> Binding covers values written by 2.x. A value written by 1.x has no binding, and
+> while `allowLegacy` is on (the default) it is accepted under any key: an attacker
+> can still place an old 1.x ciphertext where they like. The protection is complete
+> once the data has been migrated with `rewrap()` **and** `allowLegacy` is `false`.
+> `rewrap()` binds whatever sits under a key at that moment, so migrate from a store
+> you trust.
 
 The same binding is available directly:
 
@@ -233,6 +242,15 @@ const storage = createSecureMemoryStorage({ allowLegacy: false });
 (`new AesGcmEncryptor({ allowLegacy: false })`). The store's setting wins when both
 are given.
 
+A 1.x value that was missed by the migration is then refused, usually as
+`UNSUPPORTED_ENVELOPE`. About one in 256 starts with the byte that announces the
+current format and is reported as `MALFORMED_CIPHERTEXT` or `DECRYPTION_FAILED`
+instead, so do not read those two codes as proof that the data is damaged.
+
+`rewrap()` re-reads the value before writing it back and leaves it alone if it
+changed, but two migrations running at once (two tabs, two workers) can still
+overwrite each other. Run it from one place.
+
 ### Custom Storage
 
 `IStorage` accepts synchronous and asynchronous backends alike, so the same
@@ -253,6 +271,9 @@ class IndexedDbStorage implements IStorage {
 
 const storage = new SecureStorage(new IndexedDbStorage(), new AesGcmEncryptor());
 ```
+
+A custom `IEncryptor` receives `context` and `allowLegacy` in its options. If it
+ignores them, key binding and downgrade protection are off for that store.
 
 ### Utilities
 
@@ -362,8 +383,11 @@ Behaviour that changes without a signature change:
 - `null` round-trips. `undefined`, functions and symbols are rejected instead of
   silently producing a corrupt ciphertext.
 - `MemoryStorage.getItem()` returns `''` for a stored empty string rather than `null`.
-- `LocalStorage` / `SessionStorage` throw at construction outside a browser instead of
-  a bare `ReferenceError` on first use.
+- `LocalStorage` / `SessionStorage` throw `STORAGE_UNAVAILABLE` on first use outside a
+  browser instead of a bare `ReferenceError`. Constructing them is always safe.
+- A password must be a string, and a non-empty one to encrypt. `undefined` and `null`
+  used to be coerced, silently encrypting under `''` or `'null'`. Data that 1.x wrote
+  under an empty password still decrypts.
 
 Stored data needs no migration to keep working. To gain context binding and the
 current iteration count on data written by 1.0.x, run `rewrap()` (see
