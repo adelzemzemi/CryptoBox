@@ -402,3 +402,39 @@ describe('AES-GCM Encryption', () => {
     });
   });
 });
+
+describe('ciphertexts that travelled as text', () => {
+  const options = { iterations: 1000, allowWeakIterations: true };
+
+  it('should read a ciphertext with whitespace or without padding, as 1.x did', async () => {
+    const ciphertext = await encrypt('hi', 'pw', options);
+    const wrapped = ciphertext.replace(/(.{16})/g, '$1\r\n');
+
+    for (const variant of [`${ciphertext}\n`, ` ${ciphertext}\t`, wrapped]) {
+      expect(await decrypt(variant, 'pw')).toBe('hi');
+    }
+
+    // 'hi' leaves one padding character; 'h' leaves two.
+    for (const plaintext of ['hi', 'h', 'hey']) {
+      const padded = await encrypt(plaintext, 'pw', options);
+      expect(await decrypt(padded.replace(/=+$/, ''), 'pw')).toBe(plaintext);
+      expect(inspect(padded.replace(/=+$/, '')).version).toBe(2);
+    }
+  });
+
+  it('should reject a ciphertext that is not a string', async () => {
+    for (const value of [undefined, null, 42, new Uint8Array(40)]) {
+      await expect(decrypt(value as unknown as string, 'pw')).rejects.toMatchObject({
+        code: 'MALFORMED_CIPHERTEXT',
+      });
+    }
+  });
+
+  it('should still reject text outside the base64 alphabet', async () => {
+    const ciphertext = await encrypt('hi', 'pw', options);
+
+    for (const variant of [`${ciphertext}!`, ciphertext.replace(/^./, '-'), `=${ciphertext}`]) {
+      await expect(decrypt(variant, 'pw')).rejects.toMatchObject({ code: 'MALFORMED_CIPHERTEXT' });
+    }
+  });
+});

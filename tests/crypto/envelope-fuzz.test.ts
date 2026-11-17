@@ -12,7 +12,8 @@ const PASSWORD = 'correct horse battery staple';
 const PLAINTEXT = '{"user":"alice","id":42}';
 const WRITE = { iterations: 1000, allowWeakIterations: true };
 const REJECTIONS = ['MALFORMED_CIPHERTEXT', 'DECRYPTION_FAILED', 'UNSUPPORTED_ENVELOPE'];
-const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
+/** What the reader may decode: base64 characters, padding and ASCII whitespace. */
+const DECODABLE = /^[A-Za-z0-9+/=\t\n\f\r ]*$/;
 
 /** Deterministic generator, so a failure reproduces on the next run. */
 function mulberry32(seed: number): () => number {
@@ -69,7 +70,7 @@ describe('envelope parser under hostile input', () => {
 
     for (let i = 0; i < 200; i++) {
       const text = String.fromCharCode(...randomBuffer(random, 1 + Math.floor(random() * 64)));
-      if (BASE64.test(text) && text.length % 4 === 0) continue;
+      if (DECODABLE.test(text)) continue;
 
       expect(await outcome(text, true)).toBe('MALFORMED_CIPHERTEXT');
       expect(() => inspect(text)).toThrow(

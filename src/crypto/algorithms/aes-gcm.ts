@@ -54,11 +54,27 @@ export interface RewrapOptions extends EncryptOptions {
   allowLegacy?: boolean;
 }
 
+/**
+ * Bring a stored ciphertext back to canonical base64.
+ *
+ * 1.x decoded with `atob`, which ignores ASCII whitespace and accepts missing
+ * padding, so ciphertexts that went through a file, a wrapped column or a URL
+ * were readable. The reader keeps accepting them; `decodeBase64` stays strict.
+ */
+function canonicalBase64(ciphertext: string): string {
+  if (typeof ciphertext !== 'string') return ciphertext;
+
+  const compact = ciphertext.replace(/[\t\n\f\r ]+/g, '');
+  if (compact.endsWith('=')) return compact;
+
+  return compact + '='.repeat((4 - (compact.length % 4)) % 4);
+}
+
 function decodeEnvelopeBytes(ciphertext: string): Uint8Array {
   let bytes: Uint8Array;
 
   try {
-    bytes = decodeBase64(ciphertext);
+    bytes = decodeBase64(canonicalBase64(ciphertext));
   } catch (error) {
     if (!isCryptoBoxError(error, 'INVALID_BASE64')) throw error;
     throw new CryptoBoxError('MALFORMED_CIPHERTEXT', 'Invalid encrypted data: not valid base64');
