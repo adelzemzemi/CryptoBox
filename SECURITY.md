@@ -21,7 +21,7 @@ If you discover a security vulnerability, please report it privately:
 ### Cryptography
 
 - **AES-256-GCM**: Authenticated encryption with 256-bit keys
-- **PBKDF2**: Key derivation with 600,000 iterations by default (OWASP recommendation), configurable per encryptor
+- **PBKDF2**: Key derivation with 600,000 iterations by default (OWASP recommendation), configurable per encryptor. Writing below 100,000 iterations is refused unless explicitly overridden
 - **Versioned envelope**: Each ciphertext records its format version and iteration count, so parameters can be strengthened without invalidating existing data
 - **Bounded key derivation**: Iteration counts read from a ciphertext are range-checked, so a hostile envelope cannot force unbounded PBKDF2 work
 - **Secure Random**: Cryptographically secure random generation for salts and IVs
@@ -39,6 +39,33 @@ If you discover a security vulnerability, please report it privately:
 
 - **Secure Base64**: Handles all byte values (0-255) correctly
 - **Cross-Platform**: Browser and Node.js/Bun compatible
+
+## Threat model
+
+**What the package protects.** Data at rest in a store the attacker can read or
+write but where they do not hold the password: a copied browser profile, a backup,
+a synced or shared storage area, a database dump. Without the password the values
+are unreadable, a modified value is rejected, and a value moved to another key or
+context stops decrypting.
+
+**What it does not protect.**
+
+- **Script running in your page.** An XSS payload, a malicious dependency or a
+  browser extension with page access sees the password when it is typed and the
+  plaintext when it is decrypted. Encryption does nothing against an attacker who
+  is already inside the application.
+- **A password shipped with the application.** A password hard-coded in the bundle,
+  or derivable from values the page can read, is available to anyone who has the
+  ciphertext. That is obfuscation. The password has to come from the user, or from
+  a secret the storage attacker cannot reach.
+- **A weak password.** PBKDF2 slows guessing down; it does not make a guessable
+  password safe. PBKDF2 is not memory-hard, so dedicated hardware tests candidates
+  far faster than a browser does. It is used because it is the password-based KDF
+  Web Crypto provides, and the package takes no dependencies.
+- **Availability.** Whoever can write to the store can delete or corrupt its
+  values. Tampering is detected, not prevented.
+- **Metadata.** Storage keys, the size of each value and when it changes are
+  visible.
 
 ## Security Considerations
 
@@ -112,8 +139,11 @@ scope by design and no amount of review changes that.
   - Browser-only entry points now fail with an actionable error outside the browser instead of a `ReferenceError`, thrown on use so that server-side rendering can still construct them
   - `rewrap()` lets stored data be migrated to the current parameters, after which `allowLegacy: false` refuses the older format outright
   - Frozen ciphertext vectors committed as literals, so a silent drift in key derivation or envelope layout is caught instead of masked by tests that generate their own input
+  - The envelope reader is exercised with random buffers, every truncation and every single-bit flip of a valid ciphertext
+  - The format is cross-checked against an independent implementation (Node's OpenSSL bindings), in both directions
+  - Writing below 100,000 PBKDF2 iterations is refused unless explicitly overridden
   - 100% statement / line / function coverage, enforced as a CI gate
-  - Not covered by this review: fuzzing of the envelope parser, side-channel analysis of the JavaScript runtime, and any form of external validation
+  - Not covered by this review: coverage-guided fuzzing, side-channel analysis of the JavaScript runtime, and any form of external validation
 
 - **Version 1.0.0** (November 2025): Initial release with security review
   - 93.93% test coverage
