@@ -1,6 +1,6 @@
 # Contributing to CryptoBox
 
-Thank you for considering contributing to CryptoBox! 🎉
+Thank you for considering contributing to CryptoBox!
 
 ## Code of Conduct
 
@@ -100,4 +100,4 @@ security(crypto): increase PBKDF2 iterations
 - [GitHub Issues](https://github.com/adelzemzemi/cryptobox/issues)
 - Email: hello@adelzemzemi.com
 
-Thank you for contributing! 🚀
+Thank you for contributing!

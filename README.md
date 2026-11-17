@@ -11,12 +11,12 @@ Zero dependencies • AES-256-GCM • Type-safe • Cross-platform
 
 ## Why CryptoBox?
 
-- **🔒 Secure by default**: AES-256-GCM authenticated encryption, PBKDF2 at 600,000 iterations, authenticated envelope header
-- **🔗 Bound to its place**: each stored value is tied to its key, so a ciphertext moved elsewhere no longer decrypts
-- **📦 Zero dependencies**: nothing to audit at runtime
-- **🎯 Type-safe**: strict TypeScript, typed errors, runtime validation on read
-- **🔄 Upgradable**: parameters travel inside each ciphertext, and `rewrap()` migrates old data in place
-- **🌐 Universal**: Browser, Node.js 20+, Deno, Bun; synchronous and asynchronous backends alike
+- **Secure by default**: AES-256-GCM authenticated encryption, PBKDF2 at 600,000 iterations, authenticated envelope header
+- **Bound to its place**: each stored value is tied to its key, so a ciphertext moved elsewhere no longer decrypts
+- **Zero dependencies**: nothing to audit at runtime
+- **Type-safe**: strict TypeScript, typed errors, runtime validation on read
+- **Upgradable**: parameters travel inside each ciphertext, and `rewrap()` migrates old data in place
+- **Universal**: Browser, Node.js 20+, Deno, Bun; synchronous and asynchronous backends alike
 
 ## Install
 
