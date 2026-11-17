@@ -16,7 +16,7 @@ If you discover a security vulnerability, please report it privately:
 - Potential impact
 - Suggested fix (if available)
 
-## Security Features
+## Security properties
 
 ### Cryptography
 
@@ -35,11 +35,6 @@ If you discover a security vulnerability, please report it privately:
 - **Error Handling**: A wrong password and a corrupted ciphertext produce the same `Decryption failed` message, so the error is not a decryption oracle. Structural problems (invalid base64, truncated input) are reported distinctly, an attacker can determine those without the key, so they leak nothing.
 - **Supply chain**: Published from CI with npm provenance; GitHub Actions are pinned by commit SHA
 
-### Data Encoding
-
-- **Secure Base64**: Handles all byte values (0-255) correctly
-- **Cross-Platform**: Browser and Node.js/Bun compatible
-
 ## Threat model
 
 **What the package protects.** Data at rest in a store the attacker can read or
@@ -53,7 +48,8 @@ to another key or context stops decrypting.
 - **Script running in your page.** An XSS payload, a malicious dependency or a
   browser extension with page access sees the password when it is typed and the
   plaintext when it is decrypted. Encryption does nothing against an attacker who
-  is already inside the application.
+  is already inside the application: a Content Security Policy and careful output
+  encoding are the defences there.
 - **A password shipped with the application.** A password hard-coded in the bundle,
   or derivable from values the page can read, is available to anyone who has the
   ciphertext. That is obfuscation. The password has to come from the user, or from
@@ -74,9 +70,7 @@ to another key or context stops decrypting.
 - **Metadata.** Storage keys, the size of each value and when it changes are
   visible.
 
-## Security Considerations
-
-### Device Fingerprinting
+## Device fingerprinting
 
 **Never derive an encryption key from `getDeviceFingerprint()`.** The value is unstable: a
 browser update, a driver change, a new monitor, a resized window, a timezone change or an
@@ -87,36 +81,6 @@ permanently unrecoverable, silently and with no way back.
 - Changes when the browser or device changes
 - Use as an additional signal, never as key material or primary authentication
 - Guard the call with `isDeviceFingerprintAvailable()`; it requires a browser environment
-
-### Storage Security
-
-- **LocalStorage/SessionStorage**: Vulnerable to XSS attacks
-- **Best Practice**: Sanitize all user inputs and use Content Security Policy (CSP)
-- **Server-Side**: Always validate data server-side as well
-
-### Production Recommendations
-
-1. Use HTTPS exclusively
-2. Implement rate limiting for decryption attempts
-3. Log failed decryption attempts
-4. Keep the default of 600,000 PBKDF2 iterations, or raise it: the value is recorded per ciphertext, so raising it is safe for existing data
-5. Implement proper CSP headers
-6. Regular security audits
-
-## Known Limitations
-
-- No protection against XSS if application is compromised
-- LocalStorage data accessible by any JavaScript on the same origin
-- Device fingerprinting can be circumvented
-- Client-side encryption cannot replace server-side security
-
-## Security Updates
-
-This library is regularly updated to address security concerns. Keep your dependencies up to date:
-
-```bash
-npm update @azemzemi/cryptobox
-```
 
 ## Independent audit status
 
@@ -130,9 +94,9 @@ someone with no stake in the result, and it should not be read as one.
 
 Treat the guarantees here as "carefully built and thoroughly tested", not as
 "independently verified". If you are protecting assets whose loss you could not
-absorb, commission an audit before relying on this package, and read
-[Known Limitations](#known-limitations) first: several classes of attack are out of
-scope by design and no amount of review changes that.
+absorb, commission an audit before relying on this package, and read the
+[threat model](#threat-model) first: several classes of attack are out of scope by
+design and no amount of review changes that.
 
 ## Internal review history
 
@@ -151,8 +115,3 @@ scope by design and no amount of review changes that.
   - Writing below 100,000 PBKDF2 iterations is refused unless explicitly overridden
   - 100% statement, line and function coverage at release, with a CI gate at 100% for those three and 95% for branches
   - Not covered by this review: coverage-guided fuzzing, side-channel analysis of the JavaScript runtime, and any form of external validation
-
-- **Version 1.0.0** (November 2025): Initial release with security review
-  - 93.93% test coverage
-  - Zero known vulnerabilities
-  - SOLID architecture for maintainability
