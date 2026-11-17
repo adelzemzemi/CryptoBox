@@ -11,7 +11,7 @@ import { decodeBase64, encodeBase64 } from '@crypto/encoding/base64';
  * would still pass, while every byte already stored by a user became unreadable.
  *
  * These vectors were produced once and must never be regenerated. If one of them
- * stops decrypting, the format changed — that is a breaking change for stored data,
+ * stops decrypting, the format changed: that is a breaking change for stored data,
  * not a test to update.
  */
 const PASSWORD = 'correct horse battery staple';
@@ -21,7 +21,7 @@ const PASSWORD = 'correct horse battery staple';
  *
  * Written as escapes so that no editor, formatter or filesystem can silently
  * recompose it. An ASCII-only password would not catch a Unicode normalisation
- * step creeping into key derivation — that change is a no-op on ASCII and would
+ * step creeping into key derivation: that change is a no-op on ASCII and would
  * lock every non-ASCII password out of its own data.
  */
 const PASSWORD_UNICODE = 'cle\u0301 secre\u0300te \u{1F510}';

@@ -14,9 +14,12 @@ blocked behind them land at the same time. It also carries the packaging and har
 fixes listed under Fixed, which is where most of the day-to-day difference from 1.0.2
 will be felt.
 
-Existing ciphertexts keep working. Nothing needs to be re-encrypted to upgrade — see
+Ciphertexts written by 1.0.x keep working. Nothing needs to be re-encrypted to upgrade. See
 `rewrap()` for the optional migration that raises the iteration count and adds context
 binding to data written by 1.0.x.
+
+The upgrade is one-way for stored data: 1.0.x cannot read what 2.0 writes. See
+"Changed - breaking" before rolling out to clients that share a store.
 
 ### Fixed
 
@@ -26,6 +29,8 @@ binding to data written by 1.0.x.
   `dist/index.cjs`, with per-condition `types` in the `exports` map. Verified in CI by
   `are-the-types-wrong`, `publint`, and a smoke test that installs the packed tarball and imports
   it from both CJS and ESM.
+- The ciphertext reader ignores ASCII whitespace and accepts missing padding, as 1.0.x did, so a
+  value that went through a file or a URL still decrypts. `decodeBase64()` itself is strict.
 - Malformed base64 escaped as a runtime-specific `InvalidCharacterError`. It is now reported as
   `MALFORMED_CIPHERTEXT`.
 - A JSON syntax error on the read path quoted the start of the decrypted plaintext in its message,
@@ -51,10 +56,10 @@ binding to data written by 1.0.x.
 - **Ciphertexts carry a versioned envelope** recording their iteration count, so KDF parameters
   can be strengthened later without invalidating stored data. Counts read from an envelope are
   range-checked, so a hostile ciphertext cannot force unbounded key-derivation work.
-- **The envelope header is authenticated.** Version and iteration count used to sit in the clear
-  outside the AES-GCM tag. Version 2 passes the header to GCM as additional authenticated data,
-  so a ciphertext downgraded to an earlier format - which would strip its context binding - is
-  rejected instead of accepted.
+- **The envelope header is authenticated.** Version 2 passes the version and the iteration count
+  to GCM as additional authenticated data, so neither can be altered without failing decryption.
+  With `allowLegacy: false`, a ciphertext downgraded to the 1.0.x format, which would strip its
+  context binding, is rejected instead of accepted.
 - **Ciphertexts can be bound to a context**, and `SecureStorage` binds each value to the key it is
   stored under by default. Previously an attacker with write access to `localStorage` could swap
   two stored values and both would still decrypt; the application saw authentic plaintext in the
@@ -106,6 +111,11 @@ binding to data written by 1.0.x.
 
 ### Changed - breaking
 
+- **1.0.x cannot read ciphertexts written by 2.0.** There is no option to write the 1.0.x format.
+  After a rollback, or while an old tab or service worker still runs a 1.0.x bundle, values
+  written by 2.0 fail to decrypt there. Roll 2.0 out to every client sharing a store first.
+- **`deriveKey()` defaults to 600,000 iterations** instead of 100,000. A direct caller who relied
+  on the default derives a different key; pass `100_000` explicitly to keep the 1.0.x key.
 - **`IStorage` accepts asynchronous backends.** Every method may now return a promise, which brings
   IndexedDB, `chrome.storage`, React Native AsyncStorage and server-side key-value stores into
   scope. Synchronous adapters are unaffected.
@@ -135,8 +145,8 @@ binding to data written by 1.0.x.
   and tests across Node 20/22/24. The dependency audit only blocks on runtime dependencies;
   dev-tooling advisories are advisory, since the package ships zero runtime dependencies.
 - Releases publish from CI with npm provenance; GitHub Actions are pinned by commit SHA.
-- The envelope reader is exercised with random buffers, every truncation and every single-bit
-  flip of a valid ciphertext, and the format is cross-checked against Node's OpenSSL bindings in
+- The envelope reader is exercised with random buffers, every truncation and single-bit flips
+  across a valid ciphertext, and the format is cross-checked against Node's OpenSSL bindings in
   both directions.
 
 ### Removed - breaking

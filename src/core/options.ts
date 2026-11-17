@@ -17,8 +17,8 @@ export interface EncryptOptions {
    * Opaque string bound to the ciphertext as AES-GCM additional authenticated
    * data. Decryption only succeeds when the same context is supplied.
    *
-   * Use it to pin a ciphertext to the place it belongs — a storage key, a user
-   * id, a tenant — so that moving it elsewhere no longer decrypts. The context
+   * Use it to pin a ciphertext to the place it belongs (a storage key, a user
+   * id, a tenant) so that moving it elsewhere no longer decrypts. The context
    * is not secret and is not stored; the caller must be able to reproduce it.
    */
   context?: string;

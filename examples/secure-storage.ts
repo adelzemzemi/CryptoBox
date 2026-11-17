@@ -26,7 +26,7 @@ interface AppState {
 /** Use the browser-backed store when there is one, otherwise stay in memory. */
 function createStore(kind: 'local' | 'session'): ISecureStorage {
   if (typeof globalThis.localStorage === 'undefined') {
-    console.log(`(no ${kind}Storage in this runtime — using MemoryStorage)`);
+    console.log(`(no ${kind}Storage in this runtime, using MemoryStorage)`);
     return createSecureMemoryStorage();
   }
 

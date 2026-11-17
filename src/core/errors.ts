@@ -56,8 +56,8 @@ export class CryptoBoxError extends Error {
  * Narrow an unknown caught value to a {@link CryptoBoxError}.
  *
  * Prefer this over `instanceof`: the package ships several entry points, and a
- * duplicated copy of the class — through bundling, a nested install or a
- * different realm — would make `instanceof` return false for an error that is
+ * duplicated copy of the class, through bundling, a nested install or a
+ * different realm, would make `instanceof` return false for an error that is
  * genuinely ours. The check here is structural and immune to that.
  *
  * @param value - Caught value

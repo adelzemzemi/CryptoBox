@@ -189,7 +189,7 @@ export function envelopeCandidates(bytes: Uint8Array, allowLegacy: boolean): Env
  * Version 2 authenticates its own header followed by the caller's context, which
  * makes the declared version and iteration count tamper-evident and pins the
  * ciphertext to its context. Version 0 has no AAD, so a context supplied when
- * reading it is ignored — that is precisely what `rewrap` fixes.
+ * reading it is ignored: that is precisely what `rewrap` fixes.
  *
  * @param envelope - Parsed envelope
  * @param context - Caller-supplied context

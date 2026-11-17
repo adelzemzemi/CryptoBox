@@ -11,12 +11,12 @@ Zero dependencies • AES-256-GCM • Type-safe • Cross-platform
 
 ## Why CryptoBox?
 
-- **🔒 Secure by default** — AES-256-GCM authenticated encryption, PBKDF2 at 600,000 iterations, authenticated envelope header
-- **🔗 Bound to its place** — each stored value is tied to its key, so a ciphertext moved elsewhere no longer decrypts
-- **📦 Zero dependencies** — nothing to audit at runtime
-- **🎯 Type-safe** — strict TypeScript, typed errors, runtime validation on read
-- **🔄 Upgradable** — parameters travel inside each ciphertext, and `rewrap()` migrates old data in place
-- **🌐 Universal** — Browser, Node.js 20+, Deno, Bun; synchronous and asynchronous backends alike
+- **🔒 Secure by default**: AES-256-GCM authenticated encryption, PBKDF2 at 600,000 iterations, authenticated envelope header
+- **🔗 Bound to its place**: each stored value is tied to its key, so a ciphertext moved elsewhere no longer decrypts
+- **📦 Zero dependencies**: nothing to audit at runtime
+- **🎯 Type-safe**: strict TypeScript, typed errors, runtime validation on read
+- **🔄 Upgradable**: parameters travel inside each ciphertext, and `rewrap()` migrates old data in place
+- **🌐 Universal**: Browser, Node.js 20+, Deno, Bun; synchronous and asynchronous backends alike
 
 ## Install
 
@@ -109,7 +109,7 @@ points, and a duplicated copy of the class would defeat an identity check.
 
 ### Validating what you decrypt
 
-`decrypt<T>()` and `getSecure<T>()` cannot check `T` on their own — the bytes are
+`decrypt<T>()` and `getSecure<T>()` cannot check `T` on their own: the bytes are
 authentic, but a payload written by an older version of your application may no
 longer have the shape you expect. Pass a type guard whenever the data outlives the
 code that wrote it.
@@ -128,13 +128,13 @@ const user = await storage.getSecure('user', password, { validate: isUser });
 ```
 
 `isPlainObject()` narrows to `Record<string, unknown>`, so destructure the fields
-rather than reaching for them with dot notation — that keeps the guard compiling
+rather than reaching for them with dot notation: that keeps the guard compiling
 under `noPropertyAccessFromIndexSignature`.
 
 ```typescript
 const stale = await encryptor.encrypt({ id: 'not-a-number' }, password);
 
-// CryptoBoxError, code VALIDATION_FAILED — instead of a crash further down.
+// CryptoBoxError, code VALIDATION_FAILED, instead of a crash further down.
 await encryptor.decrypt(stale, password, { validate: isUser });
 ```
 
@@ -166,7 +166,7 @@ const encrypted = await encryptor.encrypt(data, password, { context: 'tenant:42'
 await encryptor.decrypt(encrypted, password, { context: 'tenant:42' });
 ```
 
-The context is not secret and is not stored — the caller must be able to reproduce
+The context is not secret and is not stored: the caller must be able to reproduce
 it. Pass `{ bindToKey: false }` to a store whose ciphertexts must stay transferable.
 
 ### Tuning the KDF, and migrating
@@ -181,7 +181,7 @@ await new AesGcmEncryptor().decrypt(await strong.encrypt(data, pw), pw);
 
 #### What it costs
 
-A key is derived on **every** operation — the password is an argument, not instance
+A key is derived on **every** operation: the password is an argument, not instance
 state, so nothing is cached between calls. At the 600,000-iteration default that is
 roughly 65 ms per read or write on a desktop, and several times that on a mid-range
 phone. Ten values written in a loop means ten derivations.
@@ -307,11 +307,11 @@ replayed under a different context.
 
 | Version | Written by | Layout                   | Header authenticated | Context |
 | ------- | ---------- | ------------------------ | -------------------- | ------- |
-| 0       | 1.0.x      | `salt \|\| iv \|\| body` | —                    | —       |
+| 0       | 1.0.x      | `salt \|\| iv \|\| body` | none                 | none    |
 | 2       | 2.x        | headered                 | yes                  | yes     |
 
 Version 0 is still read transparently, so upgrading does not strand existing data.
-It carries no context binding and uses 100,000 PBKDF2 iterations — that is what
+It carries no context binding and uses 100,000 PBKDF2 iterations: that is what
 `rewrap()` upgrades.
 
 ## Device fingerprinting
@@ -338,7 +338,7 @@ import {
 
 > [!IMPORTANT]
 > **`has()` is now asynchronous.** In JavaScript without type checking, `if (storage.has(k))`
-> still compiles and is now **always true** — a promise is truthy. This is the one change
+> still compiles and is now **always true**: a promise is truthy. This is the one change
 > that fails silently instead of loudly, so grep for `.has(` before upgrading.
 >
 > ```diff
@@ -375,11 +375,17 @@ matched on message text must move to `isCryptoBoxError(error, code)`.
 Behaviour that changes without a signature change:
 
 - `require('@azemzemi/cryptobox')` works. In 1.0.2 the CommonJS entry resolved to an
-  empty object on Node 22+ and threw `ERR_REQUIRE_ESM` on Node 18–20.
+  empty object on Node 22+ and threw `ERR_REQUIRE_ESM` on Node 18 to 20.
 - PBKDF2 defaults to 600,000 iterations instead of 100,000, so encryption is roughly
-  six times slower. Existing data still decrypts at its recorded count.
+  six times slower. Existing ciphertexts still decrypt at their recorded count.
+- `deriveKey(password, salt)` follows the same default. If you called it directly in 1.x
+  without an iteration count, pass `100_000` explicitly to keep deriving the same key.
+- **1.x cannot read what 2.0 writes.** The upgrade is one-way for stored data: after a
+  rollback to 1.x, or while an old tab or service worker still runs the 1.x bundle,
+  every value written by 2.0 fails to decrypt. Ship 2.0 to every client that shares a
+  store before relying on it.
 - A wrong password and corrupted data now fail identically, and the failure no longer
-  names the storage key — in 1.0.2 the error was a decryption oracle.
+  names the storage key. In 1.0.2 the error was a decryption oracle.
 - `null` round-trips. `undefined`, functions and symbols are rejected instead of
   silently producing a corrupt ciphertext.
 - `MemoryStorage.getItem()` returns `''` for a stored empty string rather than `null`.
@@ -398,7 +404,8 @@ current iteration count on data written by 1.0.x, run `rewrap()` (see
 - AES-256-GCM authenticated encryption
 - PBKDF2-HMAC-SHA256, 600,000 iterations by default (OWASP recommendation)
 - A fresh random salt and IV per encryption
-- The envelope header is authenticated, so a downgrade to an earlier format is rejected
+- The envelope header is authenticated, so its version and iteration count cannot be
+  altered. With `allowLegacy: false`, a downgrade to the 1.x format is rejected
 - Ciphertexts are bound to a context, so relocating one does not decrypt it
 - Uniform failure for wrong passwords, corrupted data and mismatched contexts, so the
   error is not a decryption oracle
@@ -408,7 +415,7 @@ current iteration count on data written by 1.0.x, run `rewrap()` (see
 **This library has not been audited by a third party.** The reviews behind the list
 above were done by the maintainers. It is also client-side encryption: it protects
 data at rest against someone reading the storage, not against script running on your
-own origin — an XSS reads the plaintext after decryption regardless of the cipher.
+own origin: an XSS reads the plaintext after decryption regardless of the cipher.
 
 See [SECURITY.md](SECURITY.md) for the threat model, known limitations and
 vulnerability reporting.

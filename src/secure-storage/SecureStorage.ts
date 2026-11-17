@@ -8,7 +8,7 @@ export interface SecureStorageOptions {
    * Bind each ciphertext to the key it is stored under, so that a value moved to
    * another key no longer decrypts. Defaults to `true`.
    *
-   * Disable it only if ciphertexts must remain transferable between keys — an
+   * Disable it only if ciphertexts must remain transferable between keys: an
    * attacker who can write to the backend can then swap two stored values and
    * both will still decrypt.
    */

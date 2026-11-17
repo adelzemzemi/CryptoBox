@@ -87,8 +87,8 @@ function getWebGLFingerprint(document: Document): string {
  *
  * The result is not stable: browser updates, hardware changes, timezone changes and
  * privacy settings all change it. Use it as a signal (for example, to force
- * re-authentication when a session appears on another device), never as key material
- * — data encrypted under an old fingerprint is unrecoverable once it changes.
+ * re-authentication when a session appears on another device), never as key material:
+ * data encrypted under an old fingerprint is unrecoverable once it changes.
  *
  * The component list is frozen, including the deprecated `navigator.platform`, so
  * fingerprints stay comparable across releases.

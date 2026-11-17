@@ -32,7 +32,7 @@ If you discover a security vulnerability, please report it privately:
 - **Zero Dependencies**: Minimized attack surface
 - **Web Crypto API**: Native browser cryptography (no polyfills)
 - **Input Validation**: Strict type checking and sanitization
-- **Error Handling**: A wrong password and a corrupted ciphertext produce the same `Decryption failed` message, so the error is not a decryption oracle. Structural problems (invalid base64, truncated input) are reported distinctly — an attacker can determine those without the key, so they leak nothing.
+- **Error Handling**: A wrong password and a corrupted ciphertext produce the same `Decryption failed` message, so the error is not a decryption oracle. Structural problems (invalid base64, truncated input) are reported distinctly, an attacker can determine those without the key, so they leak nothing.
 - **Supply chain**: Published from CI with npm provenance; GitHub Actions are pinned by commit SHA
 
 ### Data Encoding
@@ -99,7 +99,7 @@ permanently unrecoverable, silently and with no way back.
 1. Use HTTPS exclusively
 2. Implement rate limiting for decryption attempts
 3. Log failed decryption attempts
-4. Keep the default of 600,000 PBKDF2 iterations, or raise it — the value is recorded per ciphertext, so raising it is safe for existing data
+4. Keep the default of 600,000 PBKDF2 iterations, or raise it: the value is recorded per ciphertext, so raising it is safe for existing data
 5. Implement proper CSP headers
 6. Regular security audits
 
@@ -124,32 +124,32 @@ npm update @azemzemi/cryptobox
 
 No external firm or independent cryptographer has reviewed the design, the envelope
 format or the implementation. The reviews listed below were performed by the
-maintainers on their own code. They are useful — they are how the issues in the list
-were found — but a self-review cannot substitute for adversarial examination by
+maintainers on their own code. They are useful (they are how the issues in the list
+were found), but a self-review cannot substitute for adversarial examination by
 someone with no stake in the result, and it should not be read as one.
 
 Treat the guarantees here as "carefully built and thoroughly tested", not as
 "independently verified". If you are protecting assets whose loss you could not
 absorb, commission an audit before relying on this package, and read
-[Known Limitations](#known-limitations) first — several classes of attack are out of
+[Known Limitations](#known-limitations) first: several classes of attack are out of
 scope by design and no amount of review changes that.
 
 ## Internal review history
 
 - **Version 2.0.0** (August 2026): Security, architecture and packaging review
   - PBKDF2 raised from 100,000 to 600,000 iterations, with a versioned envelope so the parameter can be raised again later
-  - The envelope header is authenticated as AES-GCM additional data, so the declared version and iteration count are tamper-evident and a format downgrade is rejected
+  - The envelope header is authenticated as AES-GCM additional data, so the declared version and iteration count are tamper-evident; with `allowLegacy: false`, a downgrade to the 1.x format is rejected
   - Ciphertexts are bound to a caller-supplied context, and `SecureStorage` binds each value to its storage key, so a ciphertext relocated by an attacker with write access no longer decrypts
-  - Removed a decryption-error inconsistency: malformed base64 previously surfaced a runtime-specific error instead of the uniform failure message
+  - Removed a decryption-error inconsistency: malformed base64 previously surfaced a runtime-specific error instead of a `CryptoBoxError` with code `MALFORMED_CIPHERTEXT`
   - `SecureStorage` no longer embeds the storage key in decryption failure messages
   - Range check on envelope iteration counts to bound attacker-controlled key-derivation work
   - Browser-only entry points now fail with an actionable error outside the browser instead of a `ReferenceError`, thrown on use so that server-side rendering can still construct them
   - `rewrap()` lets stored data be migrated to the current parameters, after which `allowLegacy: false` refuses the older format outright
   - Frozen ciphertext vectors committed as literals, so a silent drift in key derivation or envelope layout is caught instead of masked by tests that generate their own input
-  - The envelope reader is exercised with random buffers, every truncation and every single-bit flip of a valid ciphertext
+  - The envelope reader is exercised with random buffers, every truncation and single-bit flips across a valid ciphertext (all bytes except the two high bytes of the iteration count)
   - The format is cross-checked against an independent implementation (Node's OpenSSL bindings), in both directions
   - Writing below 100,000 PBKDF2 iterations is refused unless explicitly overridden
-  - 100% statement / line / function coverage, enforced as a CI gate
+  - 100% statement, line and function coverage at release, with a CI gate at 100% for those three and 95% for branches
   - Not covered by this review: coverage-guided fuzzing, side-channel analysis of the JavaScript runtime, and any form of external validation
 
 - **Version 1.0.0** (November 2025): Initial release with security review

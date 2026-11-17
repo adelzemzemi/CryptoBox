@@ -1,5 +1,15 @@
 import { CryptoBoxError, describeCause } from '../core/errors.js';
 
+function runValidator(validator: (data: unknown) => boolean, parsed: unknown): boolean {
+  try {
+    return validator(parsed);
+  } catch {
+    // A validator written for one shape commonly throws on another; that is a
+    // rejection. Its message may quote the payload, so it is not passed on.
+    throw new CryptoBoxError('VALIDATION_FAILED', 'JSON validation failed: the validator threw');
+  }
+}
+
 /**
  * Parse JSON with optional runtime validation.
  *
@@ -12,16 +22,6 @@ import { CryptoBoxError, describeCause } from '../core/errors.js';
  * @throws CryptoBoxError `DESERIALIZATION_FAILED` if the JSON is malformed
  * @throws CryptoBoxError `VALIDATION_FAILED` if the validator rejects the value
  */
-function runValidator(validator: (data: unknown) => boolean, parsed: unknown): boolean {
-  try {
-    return validator(parsed);
-  } catch {
-    // A validator written for one shape commonly throws on another; that is a
-    // rejection. Its message may quote the payload, so it is not passed on.
-    throw new CryptoBoxError('VALIDATION_FAILED', 'JSON validation failed: the validator threw');
-  }
-}
-
 export function safeJsonParse<T>(json: string, validator?: (data: unknown) => data is T): T {
   let parsed: unknown;
 

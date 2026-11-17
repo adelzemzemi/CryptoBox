@@ -6,7 +6,7 @@
  * the old value becomes permanently unrecoverable.
  *
  * The safe pattern is below: encrypt with a real password, store the fingerprint
- * alongside the data, and treat a mismatch as "this session moved — re-authenticate".
+ * alongside the data, and treat a mismatch as "this session moved, re-authenticate".
  *
  * Fingerprinting ships under its own entry point, `@azemzemi/cryptobox/fingerprint`,
  * because it only runs in a browser and because collecting device characteristics
@@ -52,7 +52,7 @@ async function main() {
   const current = await getDeviceFingerprint();
 
   if (restored && restored.boundTo !== current) {
-    console.log('Device changed — forcing re-authentication.');
+    console.log('Device changed, forcing re-authentication.');
     await storage.remove('session');
     return;
   }
