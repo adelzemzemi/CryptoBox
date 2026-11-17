@@ -467,7 +467,7 @@ above were done by the maintainers. It is also client-side encryption: it protec
 data at rest against someone reading the storage, not against script running on your
 own origin: an XSS reads the plaintext after decryption regardless of the cipher.
 
-See [SECURITY.md](SECURITY.md) for the threat model, known limitations and
+See [SECURITY.md](SECURITY.md) for the threat model, the audit status and
 vulnerability reporting.
 
 ## License

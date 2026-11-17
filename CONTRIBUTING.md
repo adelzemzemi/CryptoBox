@@ -38,16 +38,14 @@ See [SECURITY.md](SECURITY.md) for details.
 git clone https://github.com/adelzemzemi/cryptobox.git
 cd cryptobox
 npm install
-npm run build
-npm test
-npm run lint
+npm run verify
 ```
 
 ## Pull Request Process
 
 1. Fork and create a branch: `git checkout -b feature/my-feature`
 2. Make changes and add tests
-3. Run: `npm test && npm run lint`
+3. Run `npm run verify`: types, lint, formatting, tests with coverage, build and package checks
 4. Commit with clear messages (see [Conventional Commits](https://www.conventionalcommits.org/))
 5. Push and open a Pull Request
 
@@ -86,8 +84,8 @@ security(crypto): increase PBKDF2 iterations
 ### Testing
 
 - Unit tests required for new features
-- Minimum 80% coverage
-- Run `npm test` before submitting
+- CI requires 100% of lines, functions and statements, and 95% of branches
+- Run `npm run verify` before submitting
 
 ### Style
 
@@ -96,7 +94,6 @@ security(crypto): increase PBKDF2 iterations
 
 ## Questions?
 
-- [GitHub Discussions](https://github.com/adelzemzemi/cryptobox/discussions)
 - [GitHub Issues](https://github.com/adelzemzemi/cryptobox/issues)
 - Email: hello@adelzemzemi.com
 
