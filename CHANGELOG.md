@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.0.0] - 2026-08-13
+## [2.0.0] - Unreleased
 
 Supersedes 1.0.2, the previous published release.
 
