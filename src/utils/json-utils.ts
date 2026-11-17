@@ -1,54 +1,84 @@
-/**
- * Safe JSON parse with validation
- * @param json - JSON string to parse
- * @param validator - Optional validation function
- * @returns Parsed data
- * @throws Error if JSON is invalid or validation fails
- */
-export function safeJsonParse<T>(
-  json: string,
-  validator?: (data: unknown) => data is T
-): T {
+import { CryptoBoxError, describeCause } from '../core/errors.js';
+
+function runValidator(validator: (data: unknown) => boolean, parsed: unknown): boolean {
   try {
-    const parsed = JSON.parse(json);
-    
-    if (parsed === null || parsed === undefined) {
-      throw new Error('Invalid JSON: null or undefined value');
-    }
-    
-    if (validator && !validator(parsed)) {
-      throw new Error('JSON validation failed: data does not match expected type');
-    }
-    
-    return parsed as T;
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new Error(`Invalid JSON syntax: ${error.message}`);
-    }
-    throw error;
+    return validator(parsed);
+  } catch {
+    // A validator written for one shape commonly throws on another; that is a
+    // rejection. Its message may quote the payload, so it is not passed on.
+    throw new CryptoBoxError('VALIDATION_FAILED', 'JSON validation failed: the validator threw');
   }
 }
 
 /**
- * Safe JSON stringify
- * @param data - Data to stringify
- * @returns JSON string
- * @throws Error if data cannot be serialized
+ * Parse JSON with optional runtime validation.
+ *
+ * `null` is valid JSON and round-trips as `null`; only malformed syntax or a
+ * failing validator throws.
+ *
+ * @param json - JSON string to parse
+ * @param validator - Optional type guard applied to the parsed value
+ * @returns Parsed data
+ * @throws CryptoBoxError `DESERIALIZATION_FAILED` if the JSON is malformed
+ * @throws CryptoBoxError `VALIDATION_FAILED` if the validator rejects the value
  */
-export function safeJsonStringify<T>(data: T): string {
+export function safeJsonParse<T>(json: string, validator?: (data: unknown) => data is T): T {
+  let parsed: unknown;
+
   try {
-    return JSON.stringify(data);
-  } catch (error) {
-    throw new Error(
-      `Failed to serialize data: ${error instanceof Error ? error.message : 'unknown error'}`
+    parsed = JSON.parse(json);
+  } catch {
+    // The parser's own message quotes the input, which here is decrypted plaintext.
+    throw new CryptoBoxError('DESERIALIZATION_FAILED', 'Invalid JSON syntax');
+  }
+
+  if (validator && !runValidator(validator, parsed)) {
+    throw new CryptoBoxError(
+      'VALIDATION_FAILED',
+      'JSON validation failed: data does not match expected type'
     );
   }
+
+  return parsed as T;
 }
 
 /**
- * Check if value is a plain object (not null, not array, not Date, etc.)
+ * Serialize a value to JSON.
+ *
+ * Values that JSON cannot represent (`undefined`, functions, symbols) are rejected
+ * rather than silently producing a non-string result.
+ *
+ * @param data - Data to serialize
+ * @returns JSON string
+ * @throws CryptoBoxError `SERIALIZATION_FAILED` if the value cannot be serialized
+ */
+export function safeJsonStringify<T>(data: T): string {
+  let json: string | undefined;
+
+  try {
+    json = JSON.stringify(data);
+  } catch (error) {
+    throw new CryptoBoxError(
+      'SERIALIZATION_FAILED',
+      `Failed to serialize data: ${describeCause(error)}`
+    );
+  }
+
+  if (typeof json !== 'string') {
+    throw new CryptoBoxError(
+      'SERIALIZATION_FAILED',
+      'Failed to serialize data: value is not representable in JSON (undefined, function, or symbol)'
+    );
+  }
+
+  return json;
+}
+
+/**
+ * Check if a value is a plain object (not null, not an array, not a Date, etc.)
+ *
  * @param value - Value to check
- * @returns True if value is a plain object
+ * @returns True if the value is a plain object
  */
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return (

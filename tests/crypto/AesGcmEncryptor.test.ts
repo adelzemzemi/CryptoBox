@@ -1,71 +1,149 @@
 import { describe, it, expect } from 'vitest';
 import { AesGcmEncryptor } from '@crypto/AesGcmEncryptor';
+import { inspect } from '@crypto/algorithms/aes-gcm';
+import { isPlainObject, isString } from '@utils/json-utils';
 
 describe('AesGcmEncryptor', () => {
-  const encryptor = new AesGcmEncryptor();
+  const encryptor = new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true });
   const password = 'test-password';
 
-  it('should encrypt and decrypt string', async () => {
-    const data = 'Hello, World!';
+  it.each([
+    ['string', 'Hello, World!'],
+    ['number', 42],
+    ['boolean', true],
+    ['null', null],
+    ['array', [1, 2, 3, 'test', true]],
+    ['object', { id: 123, name: 'Alice', active: true, tags: ['admin'] }],
+    ['nested object', { user: { id: 1, profile: { name: 'Bob' } }, settings: { theme: 'dark' } }],
+    ['object holding a null field', { value: null, other: 1 }],
+    ['unicode', { message: '你好 🔐', emoji: '🚀' }],
+  ])('should round-trip %s', async (_label, data) => {
     const encrypted = await encryptor.encrypt(data, password);
-    const decrypted = await encryptor.decrypt<string>(encrypted, password);
-    expect(decrypted).toBe(data);
-  });
-
-  it('should encrypt and decrypt number', async () => {
-    const data = 42;
-    const encrypted = await encryptor.encrypt(data, password);
-    const decrypted = await encryptor.decrypt<number>(encrypted, password);
-    expect(decrypted).toBe(data);
-  });
-
-  it('should encrypt and decrypt boolean', async () => {
-    const data = true;
-    const encrypted = await encryptor.encrypt(data, password);
-    const decrypted = await encryptor.decrypt<boolean>(encrypted, password);
-    expect(decrypted).toBe(data);
-  });
-
-  it('should encrypt and decrypt array', async () => {
-    const data = [1, 2, 3, 'test', true];
-    const encrypted = await encryptor.encrypt(data, password);
-    const decrypted = await encryptor.decrypt<typeof data>(encrypted, password);
-    expect(decrypted).toEqual(data);
-  });
-
-  it('should encrypt and decrypt object', async () => {
-    const data = { id: 123, name: 'Alice', active: true, tags: ['admin'] };
-    const encrypted = await encryptor.encrypt(data, password);
-    const decrypted = await encryptor.decrypt<typeof data>(encrypted, password);
-    expect(decrypted).toEqual(data);
-  });
-
-  it('should encrypt and decrypt nested object', async () => {
-    const data = {
-      user: { id: 1, profile: { name: 'Bob', age: 30 } },
-      settings: { theme: 'dark', notifications: true }
-    };
-    const encrypted = await encryptor.encrypt(data, password);
-    const decrypted = await encryptor.decrypt<typeof data>(encrypted, password);
-    expect(decrypted).toEqual(data);
+    expect(await encryptor.decrypt<typeof data>(encrypted, password)).toEqual(data);
   });
 
   it('should fail with wrong password', async () => {
-    const data = { secret: 'value' };
-    const encrypted = await encryptor.encrypt(data, password);
-    await expect(encryptor.decrypt(encrypted, 'wrong-password')).rejects.toThrow();
+    const encrypted = await encryptor.encrypt({ secret: 'value' }, password);
+    await expect(encryptor.decrypt(encrypted, 'wrong-password')).rejects.toThrow(
+      'Decryption failed'
+    );
   });
 
-  it('should handle null value', async () => {
-    const data = null;
-    const encrypted = await encryptor.encrypt(data, password);
-    await expect(encryptor.decrypt(encrypted, password)).rejects.toThrow('Invalid JSON');
+  it('should reject values JSON cannot represent', async () => {
+    for (const value of [undefined, () => 1, Symbol('x')]) {
+      await expect(encryptor.encrypt(value, password)).rejects.toMatchObject({
+        code: 'SERIALIZATION_FAILED',
+      });
+    }
   });
 
-  it('should handle unicode in objects', async () => {
-    const data = { message: '你好 🔐', emoji: '🚀' };
-    const encrypted = await encryptor.encrypt(data, password);
-    const decrypted = await encryptor.decrypt<typeof data>(encrypted, password);
-    expect(decrypted).toEqual(data);
+  describe('options', () => {
+    it('should reject an out-of-range iteration count at construction', () => {
+      expect(() => new AesGcmEncryptor({ iterations: -1 })).toThrow('Invalid iteration count');
+      expect(() => new AesGcmEncryptor({ iterations: 1.5 })).toThrow('Invalid iteration count');
+    });
+
+    it('should refuse a weak iteration count unless explicitly allowed', async () => {
+      expect(() => new AesGcmEncryptor({ iterations: 99_999 })).toThrow(
+        expect.objectContaining({ code: 'INVALID_ITERATIONS' })
+      );
+      expect(() => new AesGcmEncryptor({ iterations: 100_000 })).not.toThrow();
+
+      const strict = new AesGcmEncryptor();
+      await expect(strict.encrypt({ a: 1 }, password, { iterations: 1000 })).rejects.toMatchObject({
+        code: 'INVALID_ITERATIONS',
+      });
+      await expect(
+        strict.encrypt({ a: 1 }, password, { iterations: 1000, allowWeakIterations: true })
+      ).resolves.toBeTypeOf('string');
+    });
+
+    it('should apply the instance iteration count', async () => {
+      const custom = new AesGcmEncryptor({ iterations: 2000, allowWeakIterations: true });
+      expect(inspect(await custom.encrypt({ a: 1 }, password)).iterations).toBe(2000);
+    });
+
+    it('should let a call override the instance iteration count', async () => {
+      const encrypted = await encryptor.encrypt({ a: 1 }, password, {
+        iterations: 3000,
+        allowWeakIterations: true,
+      });
+      expect(inspect(encrypted).iterations).toBe(3000);
+    });
+
+    it('should bind and require a context', async () => {
+      const encrypted = await encryptor.encrypt({ a: 1 }, password, { context: 'tenant:1' });
+
+      expect(
+        await encryptor.decrypt<{ a: number }>(encrypted, password, { context: 'tenant:1' })
+      ).toEqual({ a: 1 });
+      await expect(encryptor.decrypt(encrypted, password, { context: 'tenant:2' })).rejects.toThrow(
+        'Decryption failed'
+      );
+    });
+
+    it('should refuse legacy envelopes when the instance forbids them', async () => {
+      const strict = new AesGcmEncryptor({
+        iterations: 1000,
+        allowWeakIterations: true,
+        allowLegacy: false,
+      });
+      const encrypted = await strict.encrypt({ a: 1 }, password);
+
+      expect(await strict.decrypt<{ a: number }>(encrypted, password)).toEqual({ a: 1 });
+    });
+  });
+
+  describe('validation', () => {
+    it('should reject a payload the validator refuses', async () => {
+      const encrypted = await encryptor.encrypt(42, password);
+
+      await expect(
+        encryptor.decrypt(encrypted, password, { validate: isString })
+      ).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+    });
+
+    it('should accept a payload the validator approves', async () => {
+      const encrypted = await encryptor.encrypt({ a: 1 }, password);
+
+      expect(await encryptor.decrypt(encrypted, password, { validate: isPlainObject })).toEqual({
+        a: 1,
+      });
+    });
+  });
+
+  describe('needsRewrap', () => {
+    it('should compare against the instance iteration count', async () => {
+      const encrypted = await encryptor.encrypt({ a: 1 }, password);
+
+      expect(encryptor.needsRewrap(encrypted)).toBe(false);
+      expect(new AesGcmEncryptor({ iterations: 100_000 }).needsRewrap(encrypted)).toBe(true);
+    });
+
+    it('should honour an explicit policy over the instance count', async () => {
+      const encrypted = await encryptor.encrypt({ a: 1 }, password);
+      const lenient = new AesGcmEncryptor({
+        iterations: 5000,
+        allowWeakIterations: true,
+        rewrapPolicy: { minIterations: 1000 },
+      });
+
+      // The instance count alone would flag a 1000-iteration ciphertext.
+      expect(lenient.needsRewrap(encrypted)).toBe(false);
+    });
+
+    it('should refuse a policy stricter than what the instance writes', () => {
+      const unsatisfiable = [
+        { iterations: 100_000, rewrapPolicy: { minIterations: 600_000 } },
+        { rewrapPolicy: { minIterations: 600_001 } },
+        { rewrapPolicy: { minVersion: 3 } },
+      ];
+
+      for (const options of unsatisfiable) {
+        expect(() => new AesGcmEncryptor(options)).toThrow(
+          expect.objectContaining({ code: 'INVALID_ARGUMENT' })
+        );
+      }
+    });
   });
 });

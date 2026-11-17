@@ -1,18 +1,14 @@
-import { IStorage } from '@core/interfaces';
+import { WebStorageAdapter } from './web-storage.js';
 
 /**
- * Local storage adapter
+ * `localStorage` adapter, for runtimes that provide the global.
+ *
+ * Constructing one is always safe; see {@link WebStorageAdapter}.
+ *
+ * @throws CryptoBoxError `STORAGE_UNAVAILABLE` on use when `localStorage` is absent or blocked.
  */
-export class LocalStorage implements IStorage {
-  setItem(key: string, value: string): void {
-    localStorage.setItem(key, value);
-  }
-
-  getItem(key: string): string | null {
-    return localStorage.getItem(key);
-  }
-
-  removeItem(key: string): void {
-    localStorage.removeItem(key);
+export class LocalStorage extends WebStorageAdapter {
+  constructor() {
+    super('localStorage');
   }
 }

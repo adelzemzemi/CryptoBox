@@ -2,49 +2,145 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  static:
+    name: Types, lint and formatting
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run linter
-        run: npm run lint
-      
-      - name: Run tests
-        run: npm test
-      
-      - name: Build
-        run: npm run build
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-  security:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run security audit
-        run: npm audit --audit-level=moderate
+
+      - run: npm ci
+
+      - name: Type-check (src and tests)
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+  test:
+    name: Test on Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: matrix.node == '20'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  build:
+    name: Build and validate the published package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Check module resolution (are-the-types-wrong)
+        run: npm run check:exports
+
+      - name: Check package metadata (publint)
+        run: npm run check:package
+
+      - name: Smoke-test the packed tarball in CJS and ESM
+        run: |
+          set -euo pipefail
+          npm pack --pack-destination /tmp
+          mkdir -p /tmp/consumer && cd /tmp/consumer
+          echo '{"name":"consumer","version":"1.0.0"}' > package.json
+          npm install /tmp/azemzemi-cryptobox-*.tgz
+
+          node -e "
+            const m = require('@azemzemi/cryptobox');
+            if (Object.keys(m).length === 0) throw new Error('CJS entry resolved to an empty object');
+            if (typeof m.AesGcmEncryptor !== 'function') throw new Error('missing AesGcmEncryptor in CJS');
+            const f = require('@azemzemi/cryptobox/fingerprint');
+            if (typeof f.getDeviceFingerprint !== 'function') throw new Error('missing fingerprint subpath in CJS');
+            console.log('CJS OK:', Object.keys(m).length, 'exports');
+          "
+
+          node --input-type=module -e "
+            import * as m from '@azemzemi/cryptobox';
+            import * as f from '@azemzemi/cryptobox/fingerprint';
+
+            const e = new m.AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true });
+            const c = await e.encrypt({ a: 1 }, 'pw', { context: 'k' });
+            if ((await e.decrypt(c, 'pw', { context: 'k' })).a !== 1) throw new Error('ESM round-trip failed');
+
+            if (m.inspect(c).version !== m.ENVELOPE_VERSION) throw new Error('unexpected envelope version');
+
+            await e.decrypt(c, 'pw', { context: 'other' }).then(
+              () => { throw new Error('context binding not enforced'); },
+              err => { if (!m.isCryptoBoxError(err, 'DECRYPTION_FAILED')) throw err; }
+            );
+
+            if (f.isDeviceFingerprintAvailable() !== false) throw new Error('fingerprint should be unavailable under Node');
+            console.log('ESM OK:', Object.keys(m).length, 'exports');
+          "
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Blocking: anything here is reachable by consumers.
+      - name: Audit runtime dependencies
+        run: npm run audit:prod
+
+      # Non-blocking; Dependabot handles dev-tooling advisories.
+      - name: Audit dev dependencies (advisory)
+        run: npm audit --audit-level=moderate || true

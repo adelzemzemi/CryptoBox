@@ -1,18 +1,18 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+import path from 'node:path';
 
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@core': path.resolve(__dirname, './src/core'),
-      '@crypto': path.resolve(__dirname, './src/crypto'),
-      '@security': path.resolve(__dirname, './src/security'),
-      '@utils': path.resolve(__dirname, './src/utils'),
-      '@storage': path.resolve(__dirname, './src/storage'),
-      '@secure-storage': path.resolve(__dirname, './src/secure-storage'),
-      '@factories': path.resolve(__dirname, './src/factories'),
-      '@fingerprint': path.resolve(__dirname, './src/fingerprint'),
+      '@': path.resolve(import.meta.dirname, './src'),
+      '@core': path.resolve(import.meta.dirname, './src/core'),
+      '@crypto': path.resolve(import.meta.dirname, './src/crypto'),
+      '@security': path.resolve(import.meta.dirname, './src/security'),
+      '@utils': path.resolve(import.meta.dirname, './src/utils'),
+      '@storage': path.resolve(import.meta.dirname, './src/storage'),
+      '@secure-storage': path.resolve(import.meta.dirname, './src/secure-storage'),
+      '@factories': path.resolve(import.meta.dirname, './src/factories'),
+      '@fingerprint': path.resolve(import.meta.dirname, './src/fingerprint'),
     },
   },
   test: {
@@ -24,19 +24,22 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      // Without `include`, files with no tests are absent from the report entirely.
+      include: ['src/**/*.ts'],
+      // Pure re-export barrels and type-only files have no runtime code to cover.
       exclude: [
-        'node_modules/',
-        'dist/',
-        'examples/',
+        'src/index.ts',
+        'src/fingerprint/index.ts',
+        'src/core/interfaces/**',
+        'src/core/options.ts',
+        'src/core/types.ts',
         '**/*.d.ts',
-        '**/*.config.*',
-        '**/index.ts',
       ],
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 80,
-        statements: 80,
+        lines: 100,
+        functions: 100,
+        branches: 95,
+        statements: 100,
       },
     },
   },

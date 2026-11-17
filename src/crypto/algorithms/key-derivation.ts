@@ -1,35 +1,44 @@
+import { assertValidIterations } from '../envelope.js';
+import { assertPassword, requireWebCrypto } from '../guards.js';
 import {
   PBKDF2_ITERATIONS,
   HASH_ALGORITHM,
   KEY_DERIVATION_ALGORITHM,
   ENCRYPTION_ALGORITHM,
-  AES_KEY_LENGTH
-} from '@core/constants';
+  AES_KEY_LENGTH,
+} from '../../core/constants.js';
 
 /**
- * Derive encryption key from password using PBKDF2
+ * Derive an AES-GCM key from a password using PBKDF2.
+ *
  * @param password - User password
  * @param salt - Random salt (16 bytes recommended)
- * @param iterations - Number of PBKDF2 iterations (default from constants)
- * @returns CryptoKey for AES-GCM encryption
+ * @param iterations - PBKDF2 iteration count (defaults to {@link PBKDF2_ITERATIONS})
+ * @returns Non-extractable CryptoKey for AES-GCM
+ * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range
+ * @throws CryptoBoxError `INVALID_ARGUMENT` if the password is not a string
  */
 export async function deriveKey(
   password: string,
   salt: Uint8Array,
   iterations: number = PBKDF2_ITERATIONS
 ): Promise<CryptoKey> {
-  const encoder = new TextEncoder();
-  const passwordBuffer = encoder.encode(password);
+  assertPassword(password);
+  assertValidIterations(iterations);
 
-  const keyMaterial = await crypto.subtle.importKey(
+  const { subtle } = requireWebCrypto();
+
+  const passwordBuffer = new TextEncoder().encode(password);
+
+  const keyMaterial = await subtle.importKey(
     'raw',
-    passwordBuffer,
+    passwordBuffer as BufferSource,
     { name: KEY_DERIVATION_ALGORITHM },
     false,
     ['deriveKey']
   );
 
-  return crypto.subtle.deriveKey(
+  return subtle.deriveKey(
     {
       name: KEY_DERIVATION_ALGORITHM,
       salt: salt as BufferSource,
