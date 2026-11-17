@@ -7,6 +7,13 @@ export const PBKDF2_ITERATIONS = 600_000;
 /** Iteration count used by envelope version 0. Only used when reading legacy data. */
 export const PBKDF2_ITERATIONS_LEGACY = 100_000;
 
+/**
+ * Lowest iteration count accepted when writing, unless the caller opts out with
+ * `allowWeakIterations`. Reading stays permissive: a version 2 header is
+ * authenticated, so a low count found there was chosen by whoever holds the key.
+ */
+export const PBKDF2_ITERATIONS_WRITE_MIN = 100_000;
+
 /** Lower bound accepted for an iteration count read out of an envelope. */
 export const PBKDF2_ITERATIONS_MIN = 1;
 

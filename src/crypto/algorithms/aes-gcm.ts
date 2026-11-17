@@ -7,7 +7,7 @@ import {
   envelopeCandidates,
   parseHeadered,
   parseHeaderless,
-  assertValidIterations,
+  assertWritableIterations,
   readVersion,
   serializeEnvelope,
   HEADERLESS_MINIMUM,
@@ -103,7 +103,7 @@ async function tryDecrypt(
  * @param password - Encryption password
  * @param options - Iteration count and context binding
  * @returns Base64-encoded version 2 envelope
- * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range
+ * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range or too low
  */
 export async function encrypt(
   plaintext: string,
@@ -111,7 +111,7 @@ export async function encrypt(
   options: EncryptOptions = {}
 ): Promise<string> {
   const iterations = options.iterations ?? PBKDF2_ITERATIONS;
-  assertValidIterations(iterations);
+  assertWritableIterations(iterations, options.allowWeakIterations ?? false);
 
   const salt = crypto.getRandomValues(new Uint8Array(SALT_SIZE));
   const iv = crypto.getRandomValues(new Uint8Array(IV_SIZE));
@@ -255,5 +255,8 @@ export async function rewrap(
   return encrypt(plaintext, password, {
     context,
     ...(options.iterations === undefined ? {} : { iterations: options.iterations }),
+    ...(options.allowWeakIterations === undefined
+      ? {}
+      : { allowWeakIterations: options.allowWeakIterations }),
   });
 }

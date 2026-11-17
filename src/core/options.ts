@@ -7,6 +7,13 @@ export interface EncryptOptions {
   iterations?: number;
 
   /**
+   * Accept an iteration count below `PBKDF2_ITERATIONS_WRITE_MIN`. A low count
+   * makes the password cheap to brute-force from a stolen ciphertext; this exists
+   * for test suites, which need speed and protect nothing.
+   */
+  allowWeakIterations?: boolean;
+
+  /**
    * Opaque string bound to the ciphertext as AES-GCM additional authenticated
    * data. Decryption only succeeds when the same context is supplied.
    *

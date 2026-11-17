@@ -2,12 +2,14 @@ import type { IEncryptor } from '../core/interfaces/index.js';
 import type { EncryptOptions, TypedDecryptOptions } from '../core/options.js';
 import { encrypt, decrypt, needsRewrap, type RewrapPolicy } from './algorithms/aes-gcm.js';
 import { safeJsonStringify, safeJsonParse } from '../utils/json-utils.js';
-import { assertValidIterations } from './envelope.js';
+import { assertWritableIterations } from './envelope.js';
 
 /** Defaults applied to every operation of an {@link AesGcmEncryptor}. */
 export interface AesGcmEncryptorOptions {
   /** PBKDF2 iteration count. Recorded in each ciphertext. */
   iterations?: number;
+  /** Accept an iteration count below the write minimum. For test suites only. */
+  allowWeakIterations?: boolean;
   /** Whether reads accept envelope version 0, written by 1.x. Defaults to `true`. */
   allowLegacy?: boolean;
   /** Thresholds used by {@link AesGcmEncryptor.needsRewrap}. */
@@ -21,15 +23,20 @@ export interface AesGcmEncryptorOptions {
  */
 export class AesGcmEncryptor implements IEncryptor {
   private readonly iterations: number | undefined;
+  private readonly allowWeakIterations: boolean;
   private readonly allowLegacy: boolean;
   private readonly rewrapPolicy: RewrapPolicy;
 
   /**
    * @param options - Per-instance defaults
-   * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range
+   * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range or too low
    */
   constructor(options: AesGcmEncryptorOptions = {}) {
-    if (options.iterations !== undefined) assertValidIterations(options.iterations);
+    this.allowWeakIterations = options.allowWeakIterations ?? false;
+
+    if (options.iterations !== undefined) {
+      assertWritableIterations(options.iterations, this.allowWeakIterations);
+    }
 
     this.iterations = options.iterations;
     this.allowLegacy = options.allowLegacy ?? true;
@@ -48,6 +55,7 @@ export class AesGcmEncryptor implements IEncryptor {
     const iterations = options.iterations ?? this.iterations;
 
     return encrypt(safeJsonStringify(data), password, {
+      allowWeakIterations: options.allowWeakIterations ?? this.allowWeakIterations,
       ...(iterations === undefined ? {} : { iterations }),
       ...(options.context === undefined ? {} : { context: options.context }),
     });

@@ -12,6 +12,7 @@ const EXPECTED_EXPORTS = [
   'PBKDF2_ITERATIONS',
   'PBKDF2_ITERATIONS_MAX',
   'PBKDF2_ITERATIONS_MIN',
+  'PBKDF2_ITERATIONS_WRITE_MIN',
   // crypto
   'AesGcmEncryptor',
   'decrypt',

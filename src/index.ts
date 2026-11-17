@@ -21,6 +21,7 @@ export type {
 export {
   PBKDF2_ITERATIONS,
   PBKDF2_ITERATIONS_MIN,
+  PBKDF2_ITERATIONS_WRITE_MIN,
   PBKDF2_ITERATIONS_MAX,
   ENVELOPE_VERSION,
 } from './core/constants.js';

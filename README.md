@@ -95,7 +95,7 @@ try {
 | `MALFORMED_CIPHERTEXT`    | Not a well-formed envelope                                  |
 | `UNSUPPORTED_ENVELOPE`    | Readable version, refused by `allowLegacy: false`           |
 | `INVALID_BASE64`          | Input is not valid base64                                   |
-| `INVALID_ITERATIONS`      | Iteration count out of range                                |
+| `INVALID_ITERATIONS`      | Iteration count out of range, or too low to write with      |
 | `INVALID_ARGUMENT`        | An argument does not have the expected shape                |
 | `SERIALIZATION_FAILED`    | Value is not representable in JSON                          |
 | `DESERIALIZATION_FAILED`  | Decrypted payload is not valid JSON                         |
@@ -185,6 +185,17 @@ lowering the count is a deliberate, recorded choice:
 // Recorded in the ciphertext, so existing data is unaffected.
 const cheap = new AesGcmEncryptor({ iterations: 100_000 });
 ```
+
+100,000 is the lowest count the package writes with. Anything below it is refused
+with `INVALID_ITERATIONS`, because a low count makes the password cheap to
+brute-force from a stolen ciphertext. Test suites, which need speed and protect
+nothing, can opt out:
+
+```typescript
+const forTests = new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true });
+```
+
+Reading is unaffected: a ciphertext written below the minimum still decrypts.
 
 Amortising the derivation properly needs an encryptor that holds a `CryptoKey`
 instead of a password. That is a different envelope mode and is not part of 2.0.0.

@@ -41,7 +41,7 @@ class MockEncryptor implements IEncryptor {
 }
 
 const password = 'test-pass';
-const fast = new AesGcmEncryptor({ iterations: 1000 });
+const fast = new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true });
 
 describe('SecureStorage', () => {
   let secureStorage: SecureStorage;
@@ -185,7 +185,10 @@ describe('SecureStorage rewrap', () => {
 
   it('should leave an already current value untouched', async () => {
     const backend = new MemoryStorage();
-    const store = new SecureStorage(backend, new AesGcmEncryptor({ iterations: 1000 }));
+    const store = new SecureStorage(
+      backend,
+      new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true })
+    );
 
     await store.setSecure('k', { a: 1 }, password);
     const before = backend.getItem('k');
@@ -200,6 +203,24 @@ describe('SecureStorage rewrap', () => {
     await store.setSecure('k', { a: 1 }, password);
 
     await expect(store.rewrap('k', 'wrong')).rejects.toMatchObject({ code: 'DECRYPTION_FAILED' });
+  });
+
+  it('should not mistake an unrelated failure for an outdated value', async () => {
+    const backend = new MemoryStorage();
+    backend.setItem('k', 'opaque');
+
+    const broken: IEncryptor = {
+      encrypt: async () => 'never written',
+      decrypt: async () => {
+        throw new Error('backend exploded');
+      },
+      needsRewrap: () => false,
+    };
+
+    await expect(new SecureStorage(backend, broken).rewrap('k', password)).rejects.toThrow(
+      'backend exploded'
+    );
+    expect(backend.getItem('k')).toBe('opaque');
   });
 
   it('should migrate a 1.x value whose salt passes for a current header', async () => {
@@ -217,10 +238,16 @@ describe('SecureStorage rewrap', () => {
   it('should raise an outdated iteration count', async () => {
     const backend = new MemoryStorage();
 
-    const oldStore = new SecureStorage(backend, new AesGcmEncryptor({ iterations: 1000 }));
+    const oldStore = new SecureStorage(
+      backend,
+      new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true })
+    );
     await oldStore.setSecure('k', { a: 1 }, password);
 
-    const newStore = new SecureStorage(backend, new AesGcmEncryptor({ iterations: 4000 }));
+    const newStore = new SecureStorage(
+      backend,
+      new AesGcmEncryptor({ iterations: 4000, allowWeakIterations: true })
+    );
     expect(await newStore.needsRewrap('k')).toBe(true);
     expect(await newStore.rewrap('k', password)).toBe(true);
     expect(await newStore.needsRewrap('k')).toBe(false);
@@ -238,7 +265,11 @@ describe('SecureStorage rewrap', () => {
 });
 
 describe('SecureStorage legacy tolerance', () => {
-  const strictEncryptor = new AesGcmEncryptor({ iterations: 1000, allowLegacy: false });
+  const strictEncryptor = new AesGcmEncryptor({
+    iterations: 1000,
+    allowWeakIterations: true,
+    allowLegacy: false,
+  });
 
   async function backendWithLegacyValue(): Promise<MemoryStorage> {
     const backend = new MemoryStorage();

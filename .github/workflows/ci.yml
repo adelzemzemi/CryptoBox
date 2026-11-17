@@ -108,7 +108,7 @@ jobs:
             import * as m from '@azemzemi/cryptobox';
             import * as f from '@azemzemi/cryptobox/fingerprint';
 
-            const e = new m.AesGcmEncryptor({ iterations: 1000 });
+            const e = new m.AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true });
             const c = await e.encrypt({ a: 1 }, 'pw', { context: 'k' });
             if ((await e.decrypt(c, 'pw', { context: 'k' })).a !== 1) throw new Error('ESM round-trip failed');
 

@@ -56,6 +56,9 @@ binding to data written by 1.0.x.
   wrong place. Disable with `{ bindToKey: false }` where ciphertexts must stay transferable.
 - A wrong password and a corrupted ciphertext now fail identically, so the error is not a
   decryption oracle.
+- **Writing below 100,000 iterations is refused** with `INVALID_ITERATIONS`. The count was
+  previously accepted down to 1. `allowWeakIterations: true` opts out, for test suites; reading
+  a ciphertext written with a low count is unaffected.
 - `allowLegacy: false` refuses the 1.x envelope, which predates context binding, for use once
   stored data has been migrated. It can be set on the encryptor or on the store; the store only
   overrides the encryptor when it is given a value.
@@ -85,6 +88,7 @@ binding to data written by 1.0.x.
 - `IEnumerableStorage`, so `MemoryStorage.keys()` and `.clear()` are part of a contract rather than
   implementation details invisible through `IStorage`.
 - `isDeviceFingerprintAvailable()` and `resolveWebStorage()`.
+- `PBKDF2_ITERATIONS_WRITE_MIN`, the lowest iteration count accepted when writing.
 - `@azemzemi/cryptobox/fingerprint` subpath export.
 
 ### Changed - breaking
@@ -118,6 +122,9 @@ binding to data written by 1.0.x.
   and tests across Node 20/22/24. The dependency audit only blocks on runtime dependencies;
   dev-tooling advisories are advisory, since the package ships zero runtime dependencies.
 - Releases publish from CI with npm provenance; GitHub Actions are pinned by commit SHA.
+- The envelope reader is exercised with random buffers, every truncation and every single-bit
+  flip of a valid ciphertext, and the format is cross-checked against Node's OpenSSL bindings in
+  both directions.
 
 ### Removed - breaking
 

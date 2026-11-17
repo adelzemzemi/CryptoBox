@@ -22,7 +22,7 @@ function patchByte(ciphertext: string, offset: number, value: number): string {
 describe('AES-GCM Encryption', () => {
   const password = 'test-password-123';
   const plaintext = 'Hello, World!';
-  const fast = { iterations: 1000 };
+  const fast = { iterations: 1000, allowWeakIterations: true };
 
   it('should encrypt and decrypt successfully', async () => {
     const encrypted = await encrypt(plaintext, password, fast);
@@ -67,7 +67,10 @@ describe('AES-GCM Encryption', () => {
     });
 
     it('should record a custom iteration count and read it back', async () => {
-      const encrypted = await encrypt(plaintext, password, { iterations: 1000 });
+      const encrypted = await encrypt(plaintext, password, {
+        iterations: 1000,
+        allowWeakIterations: true,
+      });
 
       expect(inspect(encrypted)).toEqual({
         version: ENVELOPE_VERSION,
@@ -86,6 +89,28 @@ describe('AES-GCM Encryption', () => {
     });
   });
 
+  describe('write minimum', () => {
+    it('should refuse to write below the minimum unless explicitly allowed', async () => {
+      await expect(encrypt(plaintext, password, { iterations: 99_999 })).rejects.toMatchObject({
+        code: 'INVALID_ITERATIONS',
+        message: expect.stringContaining('allowWeakIterations'),
+      });
+    });
+
+    it('should apply the minimum to rewrap as well', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+
+      await expect(rewrap(encrypted, password, { iterations: 1000 })).rejects.toMatchObject({
+        code: 'INVALID_ITERATIONS',
+      });
+    });
+
+    it('should keep reading a ciphertext written below the minimum', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+      expect(await decrypt(encrypted, password, { allowLegacy: false })).toBe(plaintext);
+    });
+  });
+
   describe('header authentication', () => {
     it('should reject a tampered version byte', async () => {
       const encrypted = await encrypt(plaintext, password, fast);
@@ -96,7 +121,10 @@ describe('AES-GCM Encryption', () => {
     });
 
     it('should reject a tampered iteration count', async () => {
-      const encrypted = await encrypt(plaintext, password, { iterations: 1000 });
+      const encrypted = await encrypt(plaintext, password, {
+        iterations: 1000,
+        allowWeakIterations: true,
+      });
       await expect(decrypt(patchByte(encrypted, 4, 0xff), password)).rejects.toThrow(
         'Decryption failed'
       );
@@ -192,7 +220,10 @@ describe('AES-GCM Encryption', () => {
     });
 
     it('should honour an explicit policy', async () => {
-      const encrypted = await encrypt(plaintext, password, { iterations: 1000 });
+      const encrypted = await encrypt(plaintext, password, {
+        iterations: 1000,
+        allowWeakIterations: true,
+      });
 
       expect(needsRewrap(encrypted, { minIterations: 1000 })).toBe(false);
       expect(needsRewrap(encrypted, { minIterations: 2000 })).toBe(true);
@@ -201,7 +232,10 @@ describe('AES-GCM Encryption', () => {
 
     it('should upgrade a version 0 ciphertext in place', async () => {
       const legacy = await encryptV0(plaintext, password);
-      const upgraded = await rewrap(legacy, password, { iterations: 1000 });
+      const upgraded = await rewrap(legacy, password, {
+        iterations: 1000,
+        allowWeakIterations: true,
+      });
 
       expect(inspect(upgraded).version).toBe(ENVELOPE_VERSION);
       expect(needsRewrap(upgraded, { minIterations: 1000 })).toBe(false);
@@ -210,7 +244,11 @@ describe('AES-GCM Encryption', () => {
 
     it('should attach a context that legacy data never had', async () => {
       const legacy = await encryptV0(plaintext, password);
-      const bound = await rewrap(legacy, password, { iterations: 1000, context: 'user:42' });
+      const bound = await rewrap(legacy, password, {
+        iterations: 1000,
+        allowWeakIterations: true,
+        context: 'user:42',
+      });
 
       expect(await decrypt(bound, password, { context: 'user:42', allowLegacy: false })).toBe(
         plaintext

@@ -4,7 +4,7 @@ import { inspect } from '@crypto/algorithms/aes-gcm';
 import { isPlainObject, isString } from '@utils/json-utils';
 
 describe('AesGcmEncryptor', () => {
-  const encryptor = new AesGcmEncryptor({ iterations: 1000 });
+  const encryptor = new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true });
   const password = 'test-password';
 
   it.each([
@@ -43,13 +43,31 @@ describe('AesGcmEncryptor', () => {
       expect(() => new AesGcmEncryptor({ iterations: 1.5 })).toThrow('Invalid iteration count');
     });
 
+    it('should refuse a weak iteration count unless explicitly allowed', async () => {
+      expect(() => new AesGcmEncryptor({ iterations: 99_999 })).toThrow(
+        expect.objectContaining({ code: 'INVALID_ITERATIONS' })
+      );
+      expect(() => new AesGcmEncryptor({ iterations: 100_000 })).not.toThrow();
+
+      const strict = new AesGcmEncryptor();
+      await expect(strict.encrypt({ a: 1 }, password, { iterations: 1000 })).rejects.toMatchObject({
+        code: 'INVALID_ITERATIONS',
+      });
+      await expect(
+        strict.encrypt({ a: 1 }, password, { iterations: 1000, allowWeakIterations: true })
+      ).resolves.toBeTypeOf('string');
+    });
+
     it('should apply the instance iteration count', async () => {
-      const custom = new AesGcmEncryptor({ iterations: 2000 });
+      const custom = new AesGcmEncryptor({ iterations: 2000, allowWeakIterations: true });
       expect(inspect(await custom.encrypt({ a: 1 }, password)).iterations).toBe(2000);
     });
 
     it('should let a call override the instance iteration count', async () => {
-      const encrypted = await encryptor.encrypt({ a: 1 }, password, { iterations: 3000 });
+      const encrypted = await encryptor.encrypt({ a: 1 }, password, {
+        iterations: 3000,
+        allowWeakIterations: true,
+      });
       expect(inspect(encrypted).iterations).toBe(3000);
     });
 
@@ -65,7 +83,11 @@ describe('AesGcmEncryptor', () => {
     });
 
     it('should refuse legacy envelopes when the instance forbids them', async () => {
-      const strict = new AesGcmEncryptor({ iterations: 1000, allowLegacy: false });
+      const strict = new AesGcmEncryptor({
+        iterations: 1000,
+        allowWeakIterations: true,
+        allowLegacy: false,
+      });
       const encrypted = await strict.encrypt({ a: 1 }, password);
 
       expect(await strict.decrypt<{ a: number }>(encrypted, password)).toEqual({ a: 1 });
@@ -95,13 +117,14 @@ describe('AesGcmEncryptor', () => {
       const encrypted = await encryptor.encrypt({ a: 1 }, password);
 
       expect(encryptor.needsRewrap(encrypted)).toBe(false);
-      expect(new AesGcmEncryptor({ iterations: 2000 }).needsRewrap(encrypted)).toBe(true);
+      expect(new AesGcmEncryptor({ iterations: 100_000 }).needsRewrap(encrypted)).toBe(true);
     });
 
     it('should honour an explicit policy over the instance count', async () => {
       const encrypted = await encryptor.encrypt({ a: 1 }, password);
       const strict = new AesGcmEncryptor({
         iterations: 1000,
+        allowWeakIterations: true,
         rewrapPolicy: { minIterations: 5000 },
       });
 

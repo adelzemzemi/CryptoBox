@@ -15,7 +15,7 @@ function createFakeWebStorage() {
   };
 }
 
-const fast = { encryptor: new AesGcmEncryptor({ iterations: 1000 }) };
+const fast = { encryptor: new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true }) };
 
 describe('Storage Factories', () => {
   beforeEach(() => {
@@ -99,7 +99,7 @@ describe('Storage Factories', () => {
   });
 
   it('should refuse an encryptor passed positionally, as 1.x accepted', () => {
-    const encryptor = new AesGcmEncryptor({ iterations: 1000 });
+    const encryptor = new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true });
     const factories = [
       createSecureMemoryStorage,
       createSecureLocalStorage,

@@ -79,7 +79,10 @@ describe('frozen test vectors', () => {
     });
 
     it('should upgrade to the current format without losing the payload', async () => {
-      const upgraded = await rewrap(V0_ASCII, PASSWORD, { iterations: 1000 });
+      const upgraded = await rewrap(V0_ASCII, PASSWORD, {
+        iterations: 1000,
+        allowWeakIterations: true,
+      });
 
       expect(inspect(upgraded)).toEqual({ version: 2, iterations: 1000, contextBound: true });
       expect(await decrypt(upgraded, PASSWORD)).toBe(ASCII);

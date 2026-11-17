@@ -7,6 +7,7 @@ import {
   PBKDF2_ITERATIONS_LEGACY,
   PBKDF2_ITERATIONS_MIN,
   PBKDF2_ITERATIONS_MAX,
+  PBKDF2_ITERATIONS_WRITE_MIN,
 } from '../core/constants.js';
 import { CryptoBoxError } from '../core/errors.js';
 
@@ -46,6 +47,25 @@ export function assertValidIterations(iterations: number): void {
     throw new CryptoBoxError(
       'INVALID_ITERATIONS',
       `Invalid iteration count: expected an integer between ${PBKDF2_ITERATIONS_MIN} and ${PBKDF2_ITERATIONS_MAX}`
+    );
+  }
+}
+
+/**
+ * Reject an iteration count that is out of range or too low to write with.
+ *
+ * @param iterations - PBKDF2 iteration count for a new ciphertext
+ * @param allowWeak - Whether a count below {@link PBKDF2_ITERATIONS_WRITE_MIN} is accepted
+ * @throws CryptoBoxError `INVALID_ITERATIONS` if the count is refused
+ */
+export function assertWritableIterations(iterations: number, allowWeak: boolean): void {
+  assertValidIterations(iterations);
+
+  if (!allowWeak && iterations < PBKDF2_ITERATIONS_WRITE_MIN) {
+    throw new CryptoBoxError(
+      'INVALID_ITERATIONS',
+      `Invalid iteration count: ${iterations} is below the minimum of ${PBKDF2_ITERATIONS_WRITE_MIN} for new ciphertexts. ` +
+        'Pass allowWeakIterations: true to override, in tests only.'
     );
   }
 }
