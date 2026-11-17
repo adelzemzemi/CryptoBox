@@ -24,3 +24,8 @@ updates:
     labels:
       - dependencies
       - github-actions
+    # One pull request for all actions: the CodeQL steps only work at the same version.
+    groups:
+      github-actions:
+        patterns:
+          - '*'
