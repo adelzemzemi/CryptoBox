@@ -11,6 +11,7 @@ This project adheres to the [Code of Conduct](CODE_OF_CONDUCT.md).
 ### Reporting Bugs
 
 Use the [Bug Report template](.github/ISSUE_TEMPLATE/bug_report.md) and include:
+
 - Steps to reproduce
 - Expected vs actual behavior
 - Environment (OS, Node version, browser)
@@ -18,14 +19,16 @@ Use the [Bug Report template](.github/ISSUE_TEMPLATE/bug_report.md) and include:
 ### Suggesting Features
 
 Use the [Feature Request template](.github/ISSUE_TEMPLATE/feature_request.md) and describe:
+
 - Use case and motivation
 - Proposed solution
 
 ### Security Issues
 
 **DO NOT** open public issues. Report privately:
+
 - GitHub Security Advisory: https://github.com/adelzemzemi/cryptobox/security/advisories/new
-- Email: hello@adelzemzemi.dev
+- Email: hello@adelzemzemi.com
 
 See [SECURITY.md](SECURITY.md) for details.
 
@@ -57,6 +60,7 @@ type(scope): subject
 **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `security`
 
 **Examples:**
+
 ```
 feat(crypto): add ChaCha20 encryption
 fix(storage): resolve memory leak
@@ -66,23 +70,27 @@ security(crypto): increase PBKDF2 iterations
 ## Guidelines
 
 ### Code Standards
+
 - TypeScript strict mode
 - No `any` types without justification
 - JSDoc for public APIs
 - Named constants (no magic numbers)
 
 ### Security
+
 - Validate all inputs
 - Use `timingSafeEqual` for comparisons
 - Generic error messages
 - No information leakage
 
 ### Testing
+
 - Unit tests required for new features
 - Minimum 80% coverage
 - Run `npm test` before submitting
 
 ### Style
+
 - Run `npm run format` (Prettier)
 - Run `npm run lint` (ESLint)
 
@@ -90,6 +98,6 @@ security(crypto): increase PBKDF2 iterations
 
 - [GitHub Discussions](https://github.com/adelzemzemi/cryptobox/discussions)
 - [GitHub Issues](https://github.com/adelzemzemi/cryptobox/issues)
-- Email: hello@adelzemzemi.dev
+- Email: hello@adelzemzemi.com
 
 Thank you for contributing! 🚀

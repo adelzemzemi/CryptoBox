@@ -13,8 +13,9 @@ describe('Timing-Safe Utilities', () => {
       expect(timingSafeEqual('abc', 'xyz')).toBe(false);
     });
 
-    it('should return false for different lengths', () => {
+    it('should return false for different lengths, in either order', () => {
       expect(timingSafeEqual('short', 'longer string')).toBe(false);
+      expect(timingSafeEqual('longer string', 'short')).toBe(false);
     });
 
     it('should handle empty strings', () => {
@@ -42,10 +43,18 @@ describe('Timing-Safe Utilities', () => {
       expect(timingSafeEqualBuffer(buf1, buf2)).toBe(false);
     });
 
-    it('should return false for different lengths', () => {
+    it('should return false for different lengths, in either order', () => {
       const buf1 = new Uint8Array([1, 2]);
       const buf2 = new Uint8Array([1, 2, 3]);
       expect(timingSafeEqualBuffer(buf1, buf2)).toBe(false);
+      expect(timingSafeEqualBuffer(buf2, buf1)).toBe(false);
+    });
+
+    it('should handle one empty buffer in either order', () => {
+      const empty = new Uint8Array([]);
+      const filled = new Uint8Array([1]);
+      expect(timingSafeEqualBuffer(empty, filled)).toBe(false);
+      expect(timingSafeEqualBuffer(filled, empty)).toBe(false);
     });
 
     it('should handle empty buffers', () => {

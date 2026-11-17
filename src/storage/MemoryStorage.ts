@@ -1,9 +1,9 @@
-import { IStorage } from '@core/interfaces';
+import type { IEnumerableStorage } from '../core/interfaces/index.js';
 
 /**
- * In-memory storage adapter (non-persistent, for testing)
+ * In-memory storage adapter. Works in every runtime; not persistent.
  */
-export class MemoryStorage implements IStorage {
+export class MemoryStorage implements IEnumerableStorage {
   private store = new Map<string, string>();
 
   setItem(key: string, value: string): void {
@@ -11,18 +11,18 @@ export class MemoryStorage implements IStorage {
   }
 
   getItem(key: string): string | null {
-    return this.store.get(key) || null;
+    return this.store.get(key) ?? null;
   }
 
   removeItem(key: string): void {
     this.store.delete(key);
   }
 
-  clear(): void {
-    this.store.clear();
-  }
-
   keys(): string[] {
     return Array.from(this.store.keys());
+  }
+
+  clear(): void {
+    this.store.clear();
   }
 }

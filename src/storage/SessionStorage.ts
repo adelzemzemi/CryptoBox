@@ -1,18 +1,14 @@
-import { IStorage } from '@core/interfaces';
+import { WebStorageAdapter } from './web-storage.js';
 
 /**
- * Session storage adapter
+ * `sessionStorage` adapter, for runtimes that provide the global.
+ *
+ * Constructing one is always safe; see {@link WebStorageAdapter}.
+ *
+ * @throws CryptoBoxError `STORAGE_UNAVAILABLE` on use when `sessionStorage` is absent or blocked.
  */
-export class SessionStorage implements IStorage {
-  setItem(key: string, value: string): void {
-    sessionStorage.setItem(key, value);
-  }
-
-  getItem(key: string): string | null {
-    return sessionStorage.getItem(key);
-  }
-
-  removeItem(key: string): void {
-    sessionStorage.removeItem(key);
+export class SessionStorage extends WebStorageAdapter {
+  constructor() {
+    super('sessionStorage');
   }
 }
