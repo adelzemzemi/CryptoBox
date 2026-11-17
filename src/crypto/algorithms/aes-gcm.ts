@@ -147,7 +147,7 @@ export async function encrypt(
     await webCrypto.subtle.encrypt(
       { name: ENCRYPTION_ALGORITHM, iv: iv as BufferSource, additionalData: aad as BufferSource },
       key,
-      new TextEncoder().encode(plaintext) as BufferSource
+      new TextEncoder().encode(plaintext)
     )
   );
 
