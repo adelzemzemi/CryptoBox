@@ -78,7 +78,7 @@ to another key or context stops decrypting.
 
 ### Device Fingerprinting
 
-⚠️ **Never derive an encryption key from `getDeviceFingerprint()`.** The value is unstable: a
+**Never derive an encryption key from `getDeviceFingerprint()`.** The value is unstable: a
 browser update, a driver change, a new monitor, a resized window, a timezone change or an
 anti-fingerprinting setting all change it. Data encrypted under the previous value becomes
 permanently unrecoverable, silently and with no way back.
