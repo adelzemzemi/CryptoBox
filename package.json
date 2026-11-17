@@ -99,7 +99,7 @@
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^4.0.14",
     "eslint": "^9.15.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.1.8",
     "jsdom": "^25.0.1",
     "prettier": "^3.3.0",
     "publint": "^0.3.12",
