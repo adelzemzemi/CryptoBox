@@ -1,13 +1,22 @@
-# CryptoBox
+<a href="https://www.npmjs.com/package/@azemzemi/cryptobox">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/adelzemzemi/CryptoBox/main/.github/assets/banner-dark.webp">
+    <img alt="CryptoBox" src="https://raw.githubusercontent.com/adelzemzemi/CryptoBox/main/.github/assets/banner-light.webp">
+  </picture>
+</a>
 
-Secure encryption and storage for JavaScript & TypeScript.
+# Password-based encryption for browser storage and Node.js
 
+[![CI](https://github.com/adelzemzemi/CryptoBox/actions/workflows/ci.yml/badge.svg)](https://github.com/adelzemzemi/CryptoBox/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@azemzemi/cryptobox.svg)](https://www.npmjs.com/package/@azemzemi/cryptobox)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![GitHub](https://img.shields.io/badge/GitHub-zemzemi%2Fcryptobox-blue.svg)](https://github.com/adelzemzemi/cryptobox)
+[![Node.js](https://img.shields.io/node/v/@azemzemi/cryptobox.svg)](https://www.npmjs.com/package/@azemzemi/cryptobox)
+[![License](https://img.shields.io/npm/l/@azemzemi/cryptobox.svg)](https://github.com/adelzemzemi/CryptoBox/blob/main/LICENSE)
 
-Zero dependencies • AES-256-GCM • Type-safe • Cross-platform
+CryptoBox encrypts what an application keeps in `localStorage`, `sessionStorage`,
+IndexedDB or any other key-value store, under a password the user supplies. It is
+built on the Web Crypto API with AES-256-GCM and PBKDF2, ships no runtime
+dependency, and binds each stored value to its key so that a ciphertext moved
+elsewhere no longer decrypts.
 
 ## Why CryptoBox?
 
@@ -18,7 +27,13 @@ Zero dependencies • AES-256-GCM • Type-safe • Cross-platform
 - **Upgradable**: parameters travel inside each ciphertext, and `rewrap()` migrates old data in place
 - **Universal**: Browser, Node.js 20+, Deno, Bun; synchronous and asynchronous backends alike
 
-## Install
+## Requirements
+
+- Node.js 20 or later, or any runtime with the Web Crypto API: current browsers, Deno, Bun
+- A secure context in the browser (https or localhost), which Web Crypto requires
+- TypeScript types are included; TypeScript itself is optional
+
+## Installation
 
 ```bash
 npm install @azemzemi/cryptobox
@@ -26,7 +41,7 @@ npm install @azemzemi/cryptobox
 
 Upgrading from 1.0.x? See the [migration guide](#migrating-from-10x).
 
-## Usage
+## Quick start
 
 ```typescript
 import { createSecureLocalStorage } from '@azemzemi/cryptobox';
