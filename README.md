@@ -1,7 +1,7 @@
 <a href="https://www.npmjs.com/package/@azemzemi/cryptobox">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/adelzemzemi/CryptoBox/main/.github/assets/banner-dark.webp">
-    <img alt="CryptoBox" src="https://raw.githubusercontent.com/adelzemzemi/CryptoBox/main/.github/assets/banner-light.webp">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/adelzemzemi/CryptoBox/main/.github/assets/header-dark.webp">
+    <img alt="CryptoBox: browser storage, encrypted. What your app stores is unreadable without the user's password." src="https://raw.githubusercontent.com/adelzemzemi/CryptoBox/main/.github/assets/header-light.webp">
   </picture>
 </a>
 
@@ -12,20 +12,55 @@
 [![Node.js](https://img.shields.io/node/v/@azemzemi/cryptobox.svg)](https://www.npmjs.com/package/@azemzemi/cryptobox)
 [![License](https://img.shields.io/npm/l/@azemzemi/cryptobox.svg)](https://github.com/adelzemzemi/CryptoBox/blob/main/LICENSE)
 
-CryptoBox encrypts what an application keeps in `localStorage`, `sessionStorage`,
-IndexedDB or any other key-value store, under a password the user supplies. It is
-built on the Web Crypto API with AES-256-GCM and PBKDF2, ships no runtime
-dependency, and binds each stored value to its key so that a ciphertext moved
-elsewhere no longer decrypts.
+Whatever an application leaves in `localStorage` is plain text for anyone who gets a
+copy of it: a copied browser profile, a backup, a shared or synced device. CryptoBox
+stores it encrypted under a password the user supplies. The copy becomes unreadable,
+a modified value is rejected instead of returned, and a value moved to another key
+stops decrypting.
+
+## What changes in your storage
+
+```typescript
+await storage.setSecure('user', { id: 123 }, 'password');
+```
+
+|                   | What `localStorage` holds under `user`                  |
+| ----------------- | ------------------------------------------------------- |
+| Without CryptoBox | `{"id":123}`                                            |
+| With CryptoBox    | `AgAJJ8BRpePRUtROg3Bn2lf4qukLA08RLjZZxT2NGt9yQvstnZOo…` |
+
+Reading it back has three possible outcomes, and no fourth:
+
+| Situation                                       | Result              |
+| ----------------------------------------------- | ------------------- |
+| The right password                              | `{ id: 123 }`       |
+| A wrong password, or a value altered by one bit | `DECRYPTION_FAILED` |
+| The same ciphertext copied under another key    | `DECRYPTION_FAILED` |
+
+This is protection for data at rest. Script running in your own page (an XSS, a
+malicious dependency) sees the plaintext after decryption whatever the cipher, and
+a password shipped inside the bundle protects nothing: see [Security](#security).
 
 ## Why CryptoBox?
 
-- **Secure by default**: AES-256-GCM authenticated encryption, PBKDF2 at 600,000 iterations, authenticated envelope header
-- **Bound to its place**: each stored value is tied to its key, so a ciphertext moved elsewhere no longer decrypts
-- **Zero dependencies**: nothing to audit at runtime
-- **Type-safe**: strict TypeScript, typed errors, runtime validation on read
-- **Upgradable**: parameters travel inside each ciphertext, and `rewrap()` migrates old data in place
-- **Universal**: Browser, Node.js 20+, Deno, Bun; synchronous and asynchronous backends alike
+- **One call to adopt**: `setSecure()` and `getSecure()` over `localStorage`, `sessionStorage`, IndexedDB or any key-value store
+- **Safe defaults, no decisions to make**: AES-256-GCM, PBKDF2 at 600,000 iterations, a fresh salt and IV per write, an authenticated header
+- **Bound to its place**: each stored value is tied to its key, so swapping two ciphertexts fails
+- **Nothing to audit but this**: zero runtime dependencies, about 6.5 kB gzipped, built on the Web Crypto API your runtime already ships
+- **Data that survives upgrades**: parameters travel inside each ciphertext, 1.x data still decrypts, and `rewrap()` migrates it in place
+- **Typed end to end**: strict TypeScript, one error class with stable codes, runtime validation on read
+- **Runs where you do**: browsers, Node.js 20+, Deno, Bun; synchronous and asynchronous backends alike
+
+## How it is checked
+
+- **Frozen ciphertexts**, including ones written by 1.0.x, are committed to the test suite: if one stops decrypting, the format broke
+- **A second implementation agrees**: envelopes are written and read by OpenSSL through `node:crypto`, in both directions
+- **Hostile input**: truncations and single-bit flips of a valid ciphertext, and thousands of random buffers, all end in a documented error
+- **Coverage is a gate**: 100% of lines, functions and statements, enforced in CI on Node.js 20, 22 and 24
+- **Traceable releases**: published from CI with npm provenance, with no long-lived token
+
+It has not been audited by a third party. [SECURITY.md](SECURITY.md) holds the threat
+model and the known limitations.
 
 ## Requirements
 
@@ -343,7 +378,7 @@ import {
 ```
 
 > [!WARNING]
-> Never use `getDeviceFingerprint()` as an encryption password. The value is not stable —
+> Never use `getDeviceFingerprint()` as an encryption password. The value is not stable:
 > a browser update, a new monitor, a timezone change or an anti-fingerprinting setting all
 > change it, and the data encrypted under the old value becomes permanently unrecoverable.
 > Use it as a signal (for example, to force re-authentication when a session appears on a
