@@ -49,14 +49,26 @@ jobs:
           fi
           echo "Version $pkg matches tag $GITHUB_REF_NAME"
 
+      # A pre-release (2.0.0-rc.1) goes to the "next" dist-tag, so that a plain
+      # `npm install` keeps resolving to the last stable version.
+      - name: Choose the npm dist-tag
+        id: dist-tag
+        run: |
+          set -euo pipefail
+          pkg="$(node -p "require('./package.json').version")"
+          case "$pkg" in
+            *-*) echo "tag=next" >> "$GITHUB_OUTPUT" ;;
+            *) echo "tag=latest" >> "$GITHUB_OUTPUT" ;;
+          esac
+
       - name: Publish
         if: github.event_name == 'push' || inputs.dry-run == false
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Dry run
         if: github.event_name == 'workflow_dispatch' && inputs.dry-run
-        run: npm publish --provenance --access public --dry-run
+        run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }} --dry-run
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
