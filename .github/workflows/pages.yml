@@ -37,7 +37,7 @@ jobs:
       - name: Assemble the site
         run: |
           mkdir _site
-          cp demo/index.html _site/index.html
+          cp -R demo/. _site/
           cp dist/index.mjs _site/cryptobox.mjs
 
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
