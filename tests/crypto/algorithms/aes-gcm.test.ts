@@ -197,6 +197,83 @@ describe('AES-GCM Encryption', () => {
     });
   });
 
+  describe('read-side iteration cap', () => {
+    /** Return a copy of a version 2 ciphertext declaring another iteration count. */
+    function declare(ciphertext: string, iterations: number): string {
+      const bytes = decodeBase64(ciphertext);
+      new DataView(bytes.buffer).setUint32(1, iterations, false);
+      return encodeBase64(bytes);
+    }
+
+    it('should refuse an inflated count before deriving any key', async () => {
+      const inflated = declare(await encrypt(plaintext, password, fast), PBKDF2_ITERATIONS_MAX);
+      const derive = vi.spyOn(crypto.subtle, 'deriveKey');
+
+      try {
+        await expect(
+          decrypt(inflated, password, { maxIterations: 1000, allowLegacy: false })
+        ).rejects.toMatchObject({ code: 'INVALID_ITERATIONS' });
+        expect(derive).not.toHaveBeenCalled();
+      } finally {
+        derive.mockRestore();
+      }
+    });
+
+    it('should read a ciphertext written at the cap', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+      expect(await decrypt(encrypted, password, { maxIterations: 1000 })).toBe(plaintext);
+    });
+
+    it('should refuse a genuine ciphertext written above the cap', async () => {
+      const encrypted = await encrypt(plaintext, password, {
+        iterations: 2000,
+        allowWeakIterations: true,
+      });
+
+      await expect(decrypt(encrypted, password, { maxIterations: 1000 })).rejects.toMatchObject({
+        code: 'INVALID_ITERATIONS',
+      });
+    });
+
+    it('should still read a version 0 ciphertext whose salt looks like a count above the cap', async () => {
+      const colliding = await encryptV0(plaintext, password, collidingSalt(300_000));
+
+      expect(await decrypt(colliding, password, { maxIterations: 200_000 })).toBe(plaintext);
+    });
+
+    it('should keep reporting a wrong password as a decryption failure', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+
+      await expect(
+        decrypt(encrypted, 'wrong-password', { maxIterations: 1000 })
+      ).rejects.toMatchObject({ code: 'DECRYPTION_FAILED' });
+    });
+
+    it('should reject a cap that is not a valid iteration count', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+
+      for (const maxIterations of [0, PBKDF2_ITERATIONS_MAX + 1, 1.5]) {
+        await expect(decrypt(encrypted, password, { maxIterations })).rejects.toMatchObject({
+          code: 'INVALID_ITERATIONS',
+        });
+      }
+    });
+
+    it('should apply the cap to the ciphertext being rewrapped', async () => {
+      const encrypted = await encrypt(plaintext, password, {
+        iterations: 2000,
+        allowWeakIterations: true,
+      });
+
+      await expect(
+        rewrap(encrypted, password, { ...fast, maxIterations: 1000 })
+      ).rejects.toMatchObject({ code: 'INVALID_ITERATIONS' });
+      expect(
+        await decrypt(await rewrap(encrypted, password, { ...fast, maxIterations: 2000 }), password)
+      ).toBe(plaintext);
+    });
+  });
+
   describe('context binding', () => {
     it('should round-trip when the context matches', async () => {
       const encrypted = await encrypt(plaintext, password, { ...fast, context: 'user:42' });

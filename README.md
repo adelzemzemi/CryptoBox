@@ -143,19 +143,19 @@ try {
 }
 ```
 
-| Code                      | Meaning                                                     |
-| ------------------------- | ----------------------------------------------------------- |
-| `DECRYPTION_FAILED`       | Wrong password, tampered data, or a mismatched context      |
-| `MALFORMED_CIPHERTEXT`    | Not a well-formed envelope                                  |
-| `UNSUPPORTED_ENVELOPE`    | Readable version, refused by `allowLegacy: false`           |
-| `INVALID_BASE64`          | Input is not valid base64                                   |
-| `INVALID_ITERATIONS`      | Iteration count out of range, or too low to write with      |
-| `INVALID_ARGUMENT`        | An argument does not have the expected shape                |
-| `SERIALIZATION_FAILED`    | Value is not representable in JSON                          |
-| `DESERIALIZATION_FAILED`  | Decrypted payload is not valid JSON                         |
-| `VALIDATION_FAILED`       | Decrypted payload rejected by the supplied validator        |
-| `STORAGE_UNAVAILABLE`     | The storage backend is absent from this runtime, or blocked |
-| `UNSUPPORTED_ENVIRONMENT` | A required global is missing                                |
+| Code                      | Meaning                                                                  |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `DECRYPTION_FAILED`       | Wrong password, tampered data, or a mismatched context                   |
+| `MALFORMED_CIPHERTEXT`    | Not a well-formed envelope                                               |
+| `UNSUPPORTED_ENVELOPE`    | Readable version, refused by `allowLegacy: false`                        |
+| `INVALID_BASE64`          | Input is not valid base64                                                |
+| `INVALID_ITERATIONS`      | Iteration count out of range, too low to write, or above `maxIterations` |
+| `INVALID_ARGUMENT`        | An argument does not have the expected shape                             |
+| `SERIALIZATION_FAILED`    | Value is not representable in JSON                                       |
+| `DESERIALIZATION_FAILED`  | Decrypted payload is not valid JSON                                      |
+| `VALIDATION_FAILED`       | Decrypted payload rejected by the supplied validator                     |
+| `STORAGE_UNAVAILABLE`     | The storage backend is absent from this runtime, or blocked              |
+| `UNSUPPORTED_ENVIRONMENT` | A required global is missing                                             |
 
 Use `isCryptoBoxError()` rather than `instanceof`: the package ships several entry
 points, and a duplicated copy of the class would defeat an identity check.
@@ -258,6 +258,20 @@ const forTests = new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: tr
 ```
 
 Reading is unaffected: a ciphertext written below the minimum still decrypts.
+
+The count a read derives with comes from the stored value, and it has to be used
+before the authentication tag can be checked. Whoever can write to the store can
+therefore raise it, up to 5,000,000, and make a read that is going to fail cost
+about eight times the default first. Cap it at the highest count your application
+ever wrote with:
+
+```typescript
+const encryptor = new AesGcmEncryptor({ maxIterations: 600_000 });
+```
+
+A value declaring more is then refused with `INVALID_ITERATIONS` before any key
+is derived. The cap is not on by default, because a store may hold values written
+with a higher count than the one configured today.
 
 Amortising the derivation properly needs an encryptor that holds a `CryptoKey`
 instead of a password. That is a different envelope mode and is not part of 2.0.0.

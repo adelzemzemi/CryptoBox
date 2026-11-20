@@ -64,7 +64,14 @@ export class SecureStorage implements ISecureStorage {
       });
       return true;
     } catch (error) {
-      if (isCryptoBoxError(error, 'DECRYPTION_FAILED')) return false;
+      // A count above the encryptor's read cap is not the current format either:
+      // the full read that follows settles whether it is a 1.x value or a refusal.
+      if (
+        isCryptoBoxError(error, 'DECRYPTION_FAILED') ||
+        isCryptoBoxError(error, 'INVALID_ITERATIONS')
+      ) {
+        return false;
+      }
       throw error;
     }
   }

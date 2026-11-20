@@ -112,6 +112,47 @@ describe('AesGcmEncryptor', () => {
     });
   });
 
+  describe('maxIterations', () => {
+    const higher = new AesGcmEncryptor({ iterations: 2000, allowWeakIterations: true });
+
+    it('should refuse a ciphertext declaring more than the instance cap', async () => {
+      const capped = new AesGcmEncryptor({
+        iterations: 1000,
+        allowWeakIterations: true,
+        maxIterations: 1000,
+      });
+      const encrypted = await higher.encrypt('value', password);
+
+      await expect(capped.decrypt(encrypted, password)).rejects.toMatchObject({
+        code: 'INVALID_ITERATIONS',
+      });
+      expect(await capped.decrypt(await capped.encrypt('value', password), password)).toBe('value');
+    });
+
+    it('should let a call override the instance cap', async () => {
+      const capped = new AesGcmEncryptor({
+        iterations: 1000,
+        allowWeakIterations: true,
+        maxIterations: 1000,
+      });
+      const encrypted = await higher.encrypt('value', password);
+
+      expect(await capped.decrypt(encrypted, password, { maxIterations: 2000 })).toBe('value');
+    });
+
+    it('should reject a cap below the count the instance writes with', () => {
+      expect(() => new AesGcmEncryptor({ maxIterations: 100_000 })).toThrow(
+        expect.objectContaining({ code: 'INVALID_ARGUMENT' })
+      );
+    });
+
+    it('should reject a cap that is not a valid iteration count', () => {
+      expect(() => new AesGcmEncryptor({ maxIterations: 1.5 })).toThrow(
+        expect.objectContaining({ code: 'INVALID_ITERATIONS' })
+      );
+    });
+  });
+
   describe('needsRewrap', () => {
     it('should compare against the instance iteration count', async () => {
       const encrypted = await encryptor.encrypt({ a: 1 }, password);

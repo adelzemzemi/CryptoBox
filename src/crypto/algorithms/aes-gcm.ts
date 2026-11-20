@@ -7,6 +7,7 @@ import {
   envelopeCandidates,
   parseHeadered,
   parseHeaderless,
+  assertValidIterations,
   assertWritableIterations,
   readVersion,
   serializeEnvelope,
@@ -22,6 +23,7 @@ import {
   ENCRYPTION_ALGORITHM,
   ENVELOPE_VERSION,
   PBKDF2_ITERATIONS,
+  PBKDF2_ITERATIONS_MAX,
 } from '../../core/constants.js';
 
 /** What a ciphertext declares about itself, readable without the password. */
@@ -52,6 +54,8 @@ export interface RewrapOptions extends EncryptOptions {
   previousContext?: string;
   /** Whether the existing ciphertext may be an older version. Defaults to `true`. */
   allowLegacy?: boolean;
+  /** Highest iteration count accepted from the existing ciphertext. See {@link DecryptOptions.maxIterations}. */
+  maxIterations?: number;
 }
 
 /**
@@ -164,9 +168,10 @@ export async function encrypt(
  *
  * @param ciphertext - Base64-encoded envelope
  * @param password - Decryption password
- * @param options - Context binding and legacy tolerance
+ * @param options - Context binding, legacy tolerance and the read-side iteration cap
  * @returns Decrypted plaintext
  * @throws CryptoBoxError `MALFORMED_CIPHERTEXT`, `UNSUPPORTED_ENVELOPE` or `DECRYPTION_FAILED`
+ * @throws CryptoBoxError `INVALID_ITERATIONS` if the envelope declares more than `maxIterations`
  */
 export async function decrypt(
   ciphertext: string,
@@ -174,9 +179,11 @@ export async function decrypt(
   options: DecryptOptions = {}
 ): Promise<string> {
   const context = options.context ?? '';
+  const maxIterations = options.maxIterations ?? PBKDF2_ITERATIONS_MAX;
 
   assertPassword(password);
   assertContext(context);
+  assertValidIterations(maxIterations);
 
   const bytes = decodeEnvelopeBytes(ciphertext);
   const allowLegacy = options.allowLegacy ?? true;
@@ -199,9 +206,26 @@ export async function decrypt(
     );
   }
 
+  let overCap = false;
+
   for (const envelope of candidates) {
+    // A declared count is read before the tag can vouch for it, so it is capped
+    // here, ahead of the derivation it would otherwise pay for. Version 0 declares
+    // nothing: its count is fixed, and allowLegacy decides whether it is read.
+    if (envelope.version === ENVELOPE_VERSION && envelope.iterations > maxIterations) {
+      overCap = true;
+      continue;
+    }
+
     const plaintext = await tryDecrypt(envelope, password, context);
     if (plaintext !== null) return plaintext;
+  }
+
+  if (overCap) {
+    throw new CryptoBoxError(
+      'INVALID_ITERATIONS',
+      'Invalid iteration count: the envelope declares more than maxIterations allows'
+    );
   }
 
   throw new CryptoBoxError('DECRYPTION_FAILED', 'Decryption failed');
@@ -276,6 +300,7 @@ export async function rewrap(
   const plaintext = await decrypt(ciphertext, password, {
     context: options.previousContext ?? context,
     allowLegacy: options.allowLegacy ?? true,
+    ...(options.maxIterations === undefined ? {} : { maxIterations: options.maxIterations }),
   });
 
   return encrypt(plaintext, password, {

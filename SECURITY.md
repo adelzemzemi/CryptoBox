@@ -66,7 +66,10 @@ to another key or context stops decrypting.
   format has no notion of freshness. Keep a counter or a timestamp inside the
   payload if that matters.
 - **Availability.** Whoever can write to the store can delete or corrupt its
-  values. Tampering is detected, not prevented.
+  values. Tampering is detected, not prevented. They can also raise the iteration
+  count declared by a value, which is used before the tag is checked: the read
+  still fails, but only after up to 5,000,000 iterations. `maxIterations` lowers
+  that bound to the count the application writes with.
 - **Metadata.** Storage keys, the size of each value and when it changes are
   visible.
 
