@@ -97,7 +97,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "@eslint/js": "^10.0.1",
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^4.0.14",
     "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",
