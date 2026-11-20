@@ -36,6 +36,18 @@ export interface DecryptOptions {
    * without its binding.
    */
   allowLegacy?: boolean;
+
+  /**
+   * Highest PBKDF2 iteration count a read will derive with. Defaults to
+   * `PBKDF2_ITERATIONS_MAX`.
+   *
+   * The count has to be read from the envelope before the authentication tag can
+   * be checked, so whoever can write to the store can make a failing read cost up
+   * to that many iterations. Set this to the highest count the application ever
+   * wrote with and an envelope declaring more is refused with `INVALID_ITERATIONS`
+   * before any key derivation.
+   */
+  maxIterations?: number;
 }
 
 /** Decryption options plus a runtime check applied to the decoded payload. */

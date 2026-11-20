@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-11-20
+
+### Added
+
+- **`maxIterations`, a read-side cap on the PBKDF2 iteration count**, on `decrypt()`, `rewrap()`
+  and `AesGcmEncryptor`. The count is read from the envelope and used to derive the key before
+  the authentication tag can be checked, so whoever can write to the store could raise it to
+  the 5,000,000 ceiling and make a failing read cost about eight times the default. With the
+  cap set, a version 2 envelope declaring more is refused with `INVALID_ITERATIONS` before any
+  key derivation. It is opt-in: the default stays at 5,000,000, so values written with a higher
+  count than the one configured today keep decrypting. An encryptor refuses a cap lower than
+  the count it writes with. Reported by a reader of the 2.0 write-up.
+
 ## [2.0.0] - 2026-11-17
 
 Supersedes 1.0.2, the previous published release.

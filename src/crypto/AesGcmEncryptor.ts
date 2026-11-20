@@ -2,7 +2,7 @@ import type { IEncryptor } from '../core/interfaces/index.js';
 import type { EncryptOptions, TypedDecryptOptions } from '../core/options.js';
 import { encrypt, decrypt, needsRewrap, type RewrapPolicy } from './algorithms/aes-gcm.js';
 import { safeJsonStringify, safeJsonParse } from '../utils/json-utils.js';
-import { assertWritableIterations } from './envelope.js';
+import { assertValidIterations, assertWritableIterations } from './envelope.js';
 import { CryptoBoxError } from '../core/errors.js';
 import { ENVELOPE_VERSION, PBKDF2_ITERATIONS } from '../core/constants.js';
 
@@ -14,6 +14,11 @@ export interface AesGcmEncryptorOptions {
   allowWeakIterations?: boolean;
   /** Whether reads accept envelope version 0, written by 1.x. Defaults to `true`. */
   allowLegacy?: boolean;
+  /**
+   * Highest iteration count a read will derive with. Defaults to `PBKDF2_ITERATIONS_MAX`.
+   * Cannot be lower than the count this instance writes with.
+   */
+  maxIterations?: number;
   /** Thresholds used by {@link AesGcmEncryptor.needsRewrap}. */
   rewrapPolicy?: RewrapPolicy;
 }
@@ -27,12 +32,13 @@ export class AesGcmEncryptor implements IEncryptor {
   private readonly iterations: number | undefined;
   private readonly allowWeakIterations: boolean;
   private readonly allowLegacy: boolean;
+  private readonly maxIterations: number | undefined;
   private readonly rewrapPolicy: RewrapPolicy;
 
   /**
    * @param options - Per-instance defaults
-   * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range or too low
-   * @throws CryptoBoxError `INVALID_ARGUMENT` if the rewrap policy exceeds what this instance writes
+   * @throws CryptoBoxError `INVALID_ITERATIONS` if an iteration count is out of range or too low
+   * @throws CryptoBoxError `INVALID_ARGUMENT` if the read cap or the rewrap policy contradicts what this instance writes
    */
   constructor(options: AesGcmEncryptorOptions = {}) {
     this.allowWeakIterations = options.allowWeakIterations ?? false;
@@ -43,7 +49,20 @@ export class AesGcmEncryptor implements IEncryptor {
 
     this.iterations = options.iterations;
     this.allowLegacy = options.allowLegacy ?? true;
+    this.maxIterations = options.maxIterations;
     this.rewrapPolicy = options.rewrapPolicy ?? {};
+
+    if (this.maxIterations !== undefined) {
+      assertValidIterations(this.maxIterations);
+
+      // Otherwise the instance could not read back what it has just written.
+      if (this.maxIterations < (this.iterations ?? PBKDF2_ITERATIONS)) {
+        throw new CryptoBoxError(
+          'INVALID_ARGUMENT',
+          'Invalid maxIterations: it is lower than the count this encryptor writes with'
+        );
+      }
+    }
 
     // A policy stricter than what this instance writes can never be satisfied:
     // every rewrap would produce a value that still needs one.
@@ -90,8 +109,11 @@ export class AesGcmEncryptor implements IEncryptor {
     password: string,
     options: TypedDecryptOptions<T> = {}
   ): Promise<T> {
+    const maxIterations = options.maxIterations ?? this.maxIterations;
+
     const plaintext = await decrypt(ciphertext, password, {
       allowLegacy: options.allowLegacy ?? this.allowLegacy,
+      ...(maxIterations === undefined ? {} : { maxIterations }),
       ...(options.context === undefined ? {} : { context: options.context }),
     });
 

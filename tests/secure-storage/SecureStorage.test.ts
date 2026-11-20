@@ -277,6 +277,19 @@ describe('SecureStorage rewrap', () => {
     expect(await newStore.getSecure<{ a: number }>('k', password)).toEqual({ a: 1 });
   });
 
+  it('should migrate a 1.x value whose salt looks like a count above the read cap', async () => {
+    const backend = new MemoryStorage();
+    backend.setItem('k', await encryptV0('"legacy"', password, collidingSalt(300_000)));
+
+    const store = new SecureStorage(
+      backend,
+      new AesGcmEncryptor({ iterations: 1000, allowWeakIterations: true, maxIterations: 200_000 })
+    );
+
+    expect(await store.rewrap('k', password)).toBe(true);
+    expect(await store.getSecure<string>('k', password)).toBe('legacy');
+  });
+
   it('should report false when the encryptor cannot inspect its own ciphertexts', async () => {
     const store = new SecureStorage(new MemoryStorage(), new MockEncryptor());
     await store.setSecure('k', { a: 1 }, password);
