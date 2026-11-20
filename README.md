@@ -280,7 +280,9 @@ const encryptor = new AesGcmEncryptor({ maxIterations: 600_000 });
 ```
 
 A value declaring more is then refused with `INVALID_ITERATIONS` before any key
-is derived. The cap is not on by default, because a store may hold values written
+is derived. The same encryptor refuses to write above its own cap, so a per-call
+`iterations` higher than `maxIterations` fails with `INVALID_ARGUMENT` instead of
+producing a value it could not read back. The cap is not on by default, because a store may hold values written
 with a higher count than the one configured today.
 
 Amortising the derivation properly needs an encryptor that holds a `CryptoKey`

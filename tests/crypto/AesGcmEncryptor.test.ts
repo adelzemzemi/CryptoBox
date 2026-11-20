@@ -152,6 +152,33 @@ describe('AesGcmEncryptor', () => {
       expect(await capped.decrypt(encrypted, password, { maxIterations: 2000 })).toBe('value');
     });
 
+    it('should refuse to write a per-call count above the instance cap', async () => {
+      const capped = new AesGcmEncryptor({
+        iterations: 1000,
+        allowWeakIterations: true,
+        maxIterations: 2000,
+      });
+
+      await expect(capped.encrypt('value', password, { iterations: 2001 })).rejects.toMatchObject({
+        code: 'INVALID_ARGUMENT',
+      });
+
+      // Refused before any key is derived, so the reported case stays cheap to test.
+      await expect(
+        new AesGcmEncryptor({ maxIterations: 600_000 }).encrypt('value', password, {
+          iterations: 700_000,
+        })
+      ).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
+
+      const atCap = await capped.encrypt('value', password, { iterations: 2000 });
+      expect(await capped.decrypt(atCap, password)).toBe('value');
+    });
+
+    it('should leave per-call counts alone when no cap is set', async () => {
+      const encrypted = await encryptor.encrypt('value', password, { iterations: 2000 });
+      expect(inspect(encrypted).iterations).toBe(2000);
+    });
+
     it('should reject a cap below the count the instance writes with', () => {
       expect(() => new AesGcmEncryptor({ maxIterations: 100_000 })).toThrow(
         expect.objectContaining({ code: 'INVALID_ARGUMENT' })

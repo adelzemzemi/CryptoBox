@@ -16,6 +16,12 @@ All notable changes to this project will be documented in this file.
   apart. `encrypt()`, `decrypt()`, `rewrap()` and `AesGcmEncryptor` now refuse a non-string
   `context` (and `previousContext`) with `INVALID_ARGUMENT`. Leaving it out still means no
   context.
+- **An `AesGcmEncryptor` could write what it then refused to read.** The constructor checks that
+  `maxIterations` is not below the instance's own iteration count, but a per-call `iterations`
+  was not checked against it: `new AesGcmEncryptor({ maxIterations: 600_000 })` accepted
+  `encrypt(data, pw, { iterations: 700_000 })`, then failed to decrypt the result with
+  `INVALID_ITERATIONS`. The write is now refused up front with `INVALID_ARGUMENT`, the code the
+  constructor uses for the same contradiction.
 
 ### Documentation
 
