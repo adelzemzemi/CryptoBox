@@ -66,5 +66,13 @@ export default tseslint.config(
   {
     files: ['**/*.js', '**/*.mjs'],
     ...tseslint.configs.disableTypeChecked,
+  },
+
+  {
+    // Plain modules run as-is by Node, Bun, Deno and a browser page.
+    files: ['tests/runtimes/*.mjs'],
+    languageOptions: {
+      globals: { console: 'readonly', URL: 'readonly' },
+    },
   }
 );

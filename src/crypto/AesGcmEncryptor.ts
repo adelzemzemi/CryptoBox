@@ -16,7 +16,8 @@ export interface AesGcmEncryptorOptions {
   allowLegacy?: boolean;
   /**
    * Highest iteration count a read will derive with. Defaults to `PBKDF2_ITERATIONS_MAX`.
-   * Cannot be lower than the count this instance writes with.
+   * Cannot be lower than the count this instance writes with, and a per-call
+   * `iterations` above it is refused on write.
    */
   maxIterations?: number;
   /** Thresholds used by {@link AesGcmEncryptor.needsRewrap}. */
@@ -84,9 +85,22 @@ export class AesGcmEncryptor implements IEncryptor {
    * @param password - Encryption password
    * @param options - Per-call overrides
    * @returns Base64-encoded ciphertext
+   * @throws CryptoBoxError `INVALID_ARGUMENT` if the iteration count is above this instance's `maxIterations`
    */
   async encrypt<T>(data: T, password: string, options: EncryptOptions = {}): Promise<string> {
     const iterations = options.iterations ?? this.iterations;
+
+    // The constructor holds the instance's own count to the cap; a per-call count
+    // must not slip past it, or this instance would write what it refuses to read.
+    if (
+      this.maxIterations !== undefined &&
+      (iterations ?? PBKDF2_ITERATIONS) > this.maxIterations
+    ) {
+      throw new CryptoBoxError(
+        'INVALID_ARGUMENT',
+        'Invalid iterations: it is higher than the maxIterations this encryptor reads with'
+      );
+    }
 
     return encrypt(safeJsonStringify(data), password, {
       allowWeakIterations: options.allowWeakIterations ?? this.allowWeakIterations,

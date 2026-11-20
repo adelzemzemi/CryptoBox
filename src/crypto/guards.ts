@@ -71,15 +71,37 @@ function isWellFormed(text: string): boolean {
 }
 
 /**
- * Reject a context that UTF-8 cannot represent faithfully.
+ * Reject a plaintext that is not a string.
  *
- * A lone surrogate is encoded as U+FFFD, so two different contexts would
- * authenticate as the same bytes and the binding would not tell them apart.
+ * Untyped callers would otherwise have it coerced: `undefined` encrypts as the
+ * empty string and any object as "[object Object]", and the original value is
+ * lost without an error.
+ *
+ * @param plaintext - Value received as a plaintext
+ * @throws CryptoBoxError `INVALID_ARGUMENT` if it is not a string
+ */
+export function assertPlaintext(plaintext: unknown): asserts plaintext is string {
+  if (typeof plaintext !== 'string') {
+    throw new CryptoBoxError('INVALID_ARGUMENT', 'Invalid plaintext: expected a string');
+  }
+}
+
+/**
+ * Reject a context that is not a string or that UTF-8 cannot represent faithfully.
+ *
+ * A non-string would be coerced, so every object would bind to the same
+ * "[object Object]". A lone surrogate is encoded as U+FFFD, so two different
+ * contexts would authenticate as the same bytes. Either way the binding would
+ * not tell them apart.
  *
  * @param context - Caller-supplied context
- * @throws CryptoBoxError `INVALID_ARGUMENT` if it contains a lone surrogate
+ * @throws CryptoBoxError `INVALID_ARGUMENT` if it is not a string or contains a lone surrogate
  */
-export function assertContext(context: string): void {
+export function assertContext(context: unknown): asserts context is string {
+  if (typeof context !== 'string') {
+    throw new CryptoBoxError('INVALID_ARGUMENT', 'Invalid context: expected a string');
+  }
+
   if (!isWellFormed(context)) {
     throw new CryptoBoxError(
       'INVALID_ARGUMENT',

@@ -124,6 +124,62 @@ jobs:
             console.log('ESM OK:', Object.keys(m).length, 'exports');
           "
 
+          cp "$GITHUB_WORKSPACE"/tests/runtimes/{smoke,installed}.mjs .
+          node installed.mjs
+
+      # Uses the Chrome preinstalled on the runner; nothing is downloaded.
+      - name: Smoke-test dist in headless Chrome
+        run: node tests/runtimes/chromium.mjs
+
+  runtimes:
+    name: Smoke-test the packed tarball on ${{ matrix.runtime }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [Bun, Deno]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          # Only to build and pack; the smoke test itself runs on the runtime under test.
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Install the packed tarball into a consumer project
+        run: |
+          set -euo pipefail
+          npm pack --pack-destination /tmp
+          mkdir -p /tmp/consumer && cd /tmp/consumer
+          echo '{"name":"consumer","version":"1.0.0","type":"module"}' > package.json
+          npm install /tmp/azemzemi-cryptobox-*.tgz
+          cp "$GITHUB_WORKSPACE"/tests/runtimes/{smoke,installed}.mjs .
+
+      - if: matrix.runtime == 'Bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: latest
+
+      - if: matrix.runtime == 'Bun'
+        name: Run the smoke test under Bun
+        working-directory: /tmp/consumer
+        run: bun --version && bun installed.mjs
+
+      - if: matrix.runtime == 'Deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
+      - if: matrix.runtime == 'Deno'
+        name: Run the smoke test under Deno
+        working-directory: /tmp/consumer
+        run: deno --version && deno run installed.mjs
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest

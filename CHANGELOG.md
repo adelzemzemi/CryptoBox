@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1] - 2026-11-20
+
+### Fixed
+
+- **`encrypt()` coerced a plaintext that is not a string.** From untyped JavaScript,
+  `encrypt(undefined, pw)` encrypted `""`, `encrypt({ a: 1 }, pw)` encrypted `"[object Object]"`
+  and `encrypt(123, pw)` encrypted `"123"`, so the value read back was not the value written. A
+  non-string plaintext is now refused with `INVALID_ARGUMENT`. `AesGcmEncryptor` and
+  `SecureStorage` are unaffected: they serialize to JSON first and always pass a string.
+- **A context that is not a string was coerced.** `context: 42` bound to `"42"`, and any two
+  objects bound to the same `"[object Object]"`, so the binding silently stopped telling them
+  apart. `encrypt()`, `decrypt()`, `rewrap()` and `AesGcmEncryptor` now refuse a non-string
+  `context` (and `previousContext`) with `INVALID_ARGUMENT`. Leaving it out still means no
+  context.
+- **An `AesGcmEncryptor` could write what it then refused to read.** The constructor checks that
+  `maxIterations` is not below the instance's own iteration count, but a per-call `iterations`
+  was not checked against it: `new AesGcmEncryptor({ maxIterations: 600_000 })` accepted
+  `encrypt(data, pw, { iterations: 700_000 })`, then failed to decrypt the result with
+  `INVALID_ITERATIONS`. The write is now refused up front with `INVALID_ARGUMENT`, the code the
+  constructor uses for the same contradiction.
+
+### Changed
+
+- **CI now runs the package outside Node.js.** The packed tarball is installed
+  into a consumer project and exercised under Bun and Deno, and the built module is loaded in
+  headless Chrome. Each run checks a round-trip, that a mismatched context and a wrong password
+  fail with `DECRYPTION_FAILED`, and that a frozen 1.x ciphertext and a frozen context-bound 2.x
+  ciphertext still decrypt. Until now only Node was tested; Firefox and Safari still are not. `playwright-core` is a new dev
+  dependency; it drives the Chrome already installed on the runner, so no browser is downloaded.
+
+### Documentation
+
+- **Passwords are not Unicode-normalized, and now say so.** The password's UTF-8 bytes go into
+  PBKDF2 as given, so the NFC and NFD forms of the same visible text (`café` precomposed, or
+  with a combining accent) are different passwords: data written under one fails to decrypt
+  under the other with `DECRYPTION_FAILED`. Normalizing inside the package would change the key
+  of every non-ASCII password already in use, so the behaviour is kept and pinned by a test. The
+  README and the threat model in `SECURITY.md` tell callers to normalize consistently before
+  every call, for example with `password.normalize('NFC')`.
+- **What a `maxIterations` refusal still costs.** The 2.1.0 notes said an envelope above the cap
+  is refused before any key derivation. That holds with `allowLegacy: false`. While legacy reads
+  are on (the default), the same bytes are still tried once as a headerless 1.x value, at its
+  fixed 100,000 iterations, before `INVALID_ITERATIONS` is thrown. The cost is bounded and far
+  below the cap; the README, `SECURITY.md` and the option's documentation now say so.
+
 ## [2.1.0] - 2026-11-20
 
 ### Added

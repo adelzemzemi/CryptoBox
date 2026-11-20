@@ -1,6 +1,6 @@
 {
   "name": "@azemzemi/cryptobox",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "description": "Zero-dependency encryption library for JavaScript & TypeScript. Secure localStorage, sessionStorage, or any data with AES-256-GCM encryption.",
   "main": "dist/index.cjs",
@@ -102,6 +102,7 @@
     "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",
     "jsdom": "^25.0.1",
+    "playwright-core": "^1.65.0",
     "prettier": "^3.3.0",
     "publint": "^0.3.12",
     "tsup": "^9.0.0",

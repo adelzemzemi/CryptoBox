@@ -82,6 +82,18 @@ describe('AesGcmEncryptor', () => {
       );
     });
 
+    it('should refuse a context that is not a string', async () => {
+      const encrypted = await encryptor.encrypt({ a: 1 }, password);
+      const context = { tenant: 1 } as unknown as string;
+
+      await expect(encryptor.encrypt({ a: 1 }, password, { context })).rejects.toMatchObject({
+        code: 'INVALID_ARGUMENT',
+      });
+      await expect(encryptor.decrypt(encrypted, password, { context })).rejects.toMatchObject({
+        code: 'INVALID_ARGUMENT',
+      });
+    });
+
     it('should refuse legacy envelopes when the instance forbids them', async () => {
       const strict = new AesGcmEncryptor({
         iterations: 1000,
@@ -138,6 +150,33 @@ describe('AesGcmEncryptor', () => {
       const encrypted = await higher.encrypt('value', password);
 
       expect(await capped.decrypt(encrypted, password, { maxIterations: 2000 })).toBe('value');
+    });
+
+    it('should refuse to write a per-call count above the instance cap', async () => {
+      const capped = new AesGcmEncryptor({
+        iterations: 1000,
+        allowWeakIterations: true,
+        maxIterations: 2000,
+      });
+
+      await expect(capped.encrypt('value', password, { iterations: 2001 })).rejects.toMatchObject({
+        code: 'INVALID_ARGUMENT',
+      });
+
+      // Refused before any key is derived, so the reported case stays cheap to test.
+      await expect(
+        new AesGcmEncryptor({ maxIterations: 600_000 }).encrypt('value', password, {
+          iterations: 700_000,
+        })
+      ).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
+
+      const atCap = await capped.encrypt('value', password, { iterations: 2000 });
+      expect(await capped.decrypt(atCap, password)).toBe('value');
+    });
+
+    it('should leave per-call counts alone when no cap is set', async () => {
+      const encrypted = await encryptor.encrypt('value', password, { iterations: 2000 });
+      expect(inspect(encrypted).iterations).toBe(2000);
     });
 
     it('should reject a cap below the count the instance writes with', () => {

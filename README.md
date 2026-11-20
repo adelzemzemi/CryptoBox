@@ -60,6 +60,7 @@ a password shipped inside the bundle protects nothing: see [Security](#security)
 - **A second implementation agrees**: envelopes are written and read by OpenSSL through `node:crypto`, in both directions
 - **Hostile input**: truncations and single-bit flips of a valid ciphertext, and thousands of random buffers, all end in a documented error
 - **Coverage is a gate**: 100% of lines, functions and statements, enforced in CI on Node.js 20, 22 and 24
+- **Beyond Node.js**: the packed tarball is installed and exercised under Bun and Deno, and the built module in headless Chrome, on every change
 - **Traceable releases**: published from CI with npm provenance, with no long-lived token
 
 It has not been audited by a third party. [SECURITY.md](SECURITY.md) holds the threat
@@ -125,6 +126,14 @@ Any JSON-serializable value works, including `null`. Values JSON cannot represen
 
 `getSecure()` returns `null` both for a stored `null` and for a key that does not
 exist. Use `has()` when the difference matters.
+
+A password is used exactly as given: its UTF-8 bytes go into the key derivation,
+with no Unicode normalization. `café` typed with a precomposed `é` (NFC) and with
+`e` plus a combining accent (NFD) look identical but are two different passwords,
+and one does not decrypt what the other wrote. Keyboards, input methods and
+operating systems do not all produce the same form, so normalize the password the
+same way before every call, for example with `password.normalize('NFC')`. Data
+already stored keeps needing the form it was written with.
 
 ### Typed errors
 
@@ -220,7 +229,9 @@ await encryptor.decrypt(encrypted, password, { context: 'tenant:42' });
 ```
 
 The context is not secret and is not stored: the caller must be able to reproduce
-it. Pass `{ bindToKey: false }` to a store whose ciphertexts must stay transferable.
+it. It must be a string: a number or an object is refused with `INVALID_ARGUMENT`
+rather than converted, since every object would otherwise bind to the same
+`"[object Object]"`. Leaving it out means no context. Pass `{ bindToKey: false }` to a store whose ciphertexts must stay transferable.
 
 ### Tuning the KDF, and migrating
 
@@ -269,8 +280,12 @@ ever wrote with:
 const encryptor = new AesGcmEncryptor({ maxIterations: 600_000 });
 ```
 
-A value declaring more is then refused with `INVALID_ITERATIONS` before any key
-is derived. The cap is not on by default, because a store may hold values written
+A value declaring more is then refused with `INVALID_ITERATIONS` without deriving
+a key at that count. While `allowLegacy` is on (the default), the same bytes are
+still tried once as a headerless 1.x value, at its fixed 100,000 iterations,
+before the refusal; with `allowLegacy: false` nothing is derived at all. The same encryptor refuses to write above its own cap, so a per-call
+`iterations` higher than `maxIterations` fails with `INVALID_ARGUMENT` instead of
+producing a value it could not read back. The cap is not on by default, because a store may hold values written
 with a higher count than the one configured today.
 
 Amortising the derivation properly needs an encryptor that holds a `CryptoKey`

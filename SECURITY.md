@@ -58,6 +58,11 @@ to another key or context stops decrypting.
   password safe. PBKDF2 is not memory-hard, so dedicated hardware tests candidates
   far faster than a browser does. It is used because it is the password-based KDF
   Web Crypto provides, and the package takes no dependencies.
+- **A password in another Unicode form.** The password's UTF-8 bytes are used as
+  given, without normalization, so the NFC and NFD forms of the same visible text
+  (`café` precomposed or with a combining accent) are different passwords. Data
+  written under one does not decrypt under the other. Normalize the password
+  consistently before every call, for example with `password.normalize('NFC')`.
 - **Values written by 1.x, until they are migrated.** They carry no binding. While
   `allowLegacy` is on, which is the default, an old 1.x ciphertext is accepted
   under any key. Migrate with `rewrap()` from a store you trust, then set
@@ -69,7 +74,8 @@ to another key or context stops decrypting.
   values. Tampering is detected, not prevented. They can also raise the iteration
   count declared by a value, which is used before the tag is checked: the read
   still fails, but only after up to 5,000,000 iterations. `maxIterations` lowers
-  that bound to the count the application writes with.
+  that bound to the count the application writes with. While 1.x values are still
+  accepted, a refused value also costs one derivation at the 1.x count of 100,000.
 - **Metadata.** Storage keys, the size of each value and when it changes are
   visible.
 
@@ -103,7 +109,16 @@ design and no amount of review changes that.
 
 ## Internal review history
 
-- **Version 2.0.0** (August 2026): Security, architecture and packaging review
+- **Version 2.1.1** (November 2026): Review of 2.1.0
+  - `encrypt()` refuses a plaintext that is not a string, and every entry point refuses a context that is not a string, instead of coercing them: an untyped caller could encrypt `undefined` as `""`, and any two objects bound to the same context
+  - An `AesGcmEncryptor` refuses a per-call iteration count above its own `maxIterations`, which it would otherwise write and then refuse to read
+  - Passwords are used without Unicode normalization; this is now documented in the threat model and pinned by a test, since normalizing would change the key of existing non-ASCII passwords
+  - The packed package is exercised in CI under Bun, Deno and headless Chrome, not only Node
+  - Not covered by this review: other browser engines than Chromium, and any form of external validation
+- **Version 2.1.0** (November 2026): Read-side iteration cap
+  - `maxIterations` bounds the PBKDF2 count a read will derive with. The count is read from the envelope before the tag can be checked, so whoever can write to the store could make a failing read cost up to 5,000,000 iterations; with the cap set, an envelope declaring more is refused without deriving at that count (one 100,000-iteration attempt remains while 1.x values are accepted)
+  - An encryptor refuses a cap lower than the count it writes with
+- **Version 2.0.0** (November 2026): Security, architecture and packaging review
   - PBKDF2 raised from 100,000 to 600,000 iterations, with a versioned envelope so the parameter can be raised again later
   - The envelope header is authenticated as AES-GCM additional data, so the declared version and iteration count are tamper-evident; with `allowLegacy: false`, a downgrade to the 1.x format is rejected
   - Ciphertexts are bound to a caller-supplied context, and `SecureStorage` binds each value to its storage key, so a ciphertext relocated by an attacker with write access no longer decrypts

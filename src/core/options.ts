@@ -45,7 +45,8 @@ export interface DecryptOptions {
    * be checked, so whoever can write to the store can make a failing read cost up
    * to that many iterations. Set this to the highest count the application ever
    * wrote with and an envelope declaring more is refused with `INVALID_ITERATIONS`
-   * before any key derivation.
+   * without deriving a key at that count. While legacy reads are allowed, the same
+   * bytes are still tried once as a headerless 1.x value at 100,000 iterations.
    */
   maxIterations?: number;
 }
