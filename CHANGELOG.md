@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.1.1] - 2026-11-20
 
 ### Fixed
 
@@ -25,11 +25,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- **CI now runs the package on every runtime the README names.** The packed tarball is installed
+- **CI now runs the package outside Node.js.** The packed tarball is installed
   into a consumer project and exercised under Bun and Deno, and the built module is loaded in
   headless Chrome. Each run checks a round-trip, that a mismatched context and a wrong password
   fail with `DECRYPTION_FAILED`, and that a frozen 1.x ciphertext and a frozen context-bound 2.x
-  ciphertext still decrypt. Until now only Node was tested. `playwright-core` is a new dev
+  ciphertext still decrypt. Until now only Node was tested; Firefox and Safari still are not. `playwright-core` is a new dev
   dependency; it drives the Chrome already installed on the runner, so no browser is downloaded.
 
 ### Documentation

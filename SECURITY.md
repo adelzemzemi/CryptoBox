@@ -108,7 +108,7 @@ design and no amount of review changes that.
 
 ## Internal review history
 
-- **Unreleased** (November 2026): Review of 2.1.0
+- **Version 2.1.1** (November 2026): Review of 2.1.0
   - `encrypt()` refuses a plaintext that is not a string, and every entry point refuses a context that is not a string, instead of coercing them: an untyped caller could encrypt `undefined` as `""`, and any two objects bound to the same context
   - An `AesGcmEncryptor` refuses a per-call iteration count above its own `maxIterations`, which it would otherwise write and then refuse to read
   - Passwords are used without Unicode normalization; this is now documented in the threat model and pinned by a test, since normalizing would change the key of existing non-ASCII passwords
