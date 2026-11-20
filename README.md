@@ -228,7 +228,9 @@ await encryptor.decrypt(encrypted, password, { context: 'tenant:42' });
 ```
 
 The context is not secret and is not stored: the caller must be able to reproduce
-it. Pass `{ bindToKey: false }` to a store whose ciphertexts must stay transferable.
+it. It must be a string: a number or an object is refused with `INVALID_ARGUMENT`
+rather than converted, since every object would otherwise bind to the same
+`"[object Object]"`. Leaving it out means no context. Pass `{ bindToKey: false }` to a store whose ciphertexts must stay transferable.
 
 ### Tuning the KDF, and migrating
 

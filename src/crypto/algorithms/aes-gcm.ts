@@ -15,7 +15,13 @@ import {
   type Envelope,
 } from '../envelope.js';
 import { CryptoBoxError, isCryptoBoxError } from '../../core/errors.js';
-import { assertContext, assertPassword, assertWritePassword, requireWebCrypto } from '../guards.js';
+import {
+  assertContext,
+  assertPassword,
+  assertPlaintext,
+  assertWritePassword,
+  requireWebCrypto,
+} from '../guards.js';
 import type { DecryptOptions, EncryptOptions } from '../../core/options.js';
 import {
   SALT_SIZE,
@@ -125,7 +131,7 @@ async function tryDecrypt(
  * @param options - Iteration count and context binding
  * @returns Base64-encoded version 2 envelope
  * @throws CryptoBoxError `INVALID_ITERATIONS` if the iteration count is out of range or too low
- * @throws CryptoBoxError `INVALID_ARGUMENT` if the password is empty or the context is ill-formed
+ * @throws CryptoBoxError `INVALID_ARGUMENT` if the plaintext is not a string, the password is empty or the context is ill-formed
  */
 export async function encrypt(
   plaintext: string,
@@ -135,6 +141,7 @@ export async function encrypt(
   const iterations = options.iterations ?? PBKDF2_ITERATIONS;
   const context = options.context ?? '';
 
+  assertPlaintext(plaintext);
   assertWritePassword(password);
   assertContext(context);
   assertWritableIterations(iterations, options.allowWeakIterations ?? false);
@@ -172,6 +179,7 @@ export async function encrypt(
  * @returns Decrypted plaintext
  * @throws CryptoBoxError `MALFORMED_CIPHERTEXT`, `UNSUPPORTED_ENVELOPE` or `DECRYPTION_FAILED`
  * @throws CryptoBoxError `INVALID_ITERATIONS` if the envelope declares more than `maxIterations`
+ * @throws CryptoBoxError `INVALID_ARGUMENT` if the password or the context is not a string, or the context is ill-formed
  */
 export async function decrypt(
   ciphertext: string,
@@ -289,6 +297,7 @@ export function needsRewrap(ciphertext: string, policy: RewrapPolicy = {}): bool
  * @param options - Target parameters, and the context the ciphertext currently uses
  * @returns A fresh base64-encoded version 2 envelope
  * @throws CryptoBoxError `DECRYPTION_FAILED` if the password or previous context is wrong
+ * @throws CryptoBoxError `INVALID_ARGUMENT` if a context is not a string or is ill-formed
  */
 export async function rewrap(
   ciphertext: string,

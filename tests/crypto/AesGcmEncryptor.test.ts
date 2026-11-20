@@ -82,6 +82,18 @@ describe('AesGcmEncryptor', () => {
       );
     });
 
+    it('should refuse a context that is not a string', async () => {
+      const encrypted = await encryptor.encrypt({ a: 1 }, password);
+      const context = { tenant: 1 } as unknown as string;
+
+      await expect(encryptor.encrypt({ a: 1 }, password, { context })).rejects.toMatchObject({
+        code: 'INVALID_ARGUMENT',
+      });
+      await expect(encryptor.decrypt(encrypted, password, { context })).rejects.toMatchObject({
+        code: 'INVALID_ARGUMENT',
+      });
+    });
+
     it('should refuse legacy envelopes when the instance forbids them', async () => {
       const strict = new AesGcmEncryptor({
         iterations: 1000,

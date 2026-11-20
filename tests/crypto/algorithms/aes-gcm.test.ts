@@ -129,6 +129,45 @@ describe('AES-GCM Encryption', () => {
       }
     });
 
+    it('should refuse a plaintext that is not a string', async () => {
+      const notPlaintexts = [undefined, null, 123, { a: 1 }, ['x']] as unknown as string[];
+
+      for (const bad of notPlaintexts) {
+        await expect(encrypt(bad, password, fast)).rejects.toMatchObject({
+          code: 'INVALID_ARGUMENT',
+        });
+      }
+    });
+
+    it('should refuse a context that is not a string', async () => {
+      const encrypted = await encrypt(plaintext, password, fast);
+      const notContexts = [42, {}, { id: 1 }, ['k'], true] as unknown as string[];
+
+      for (const context of notContexts) {
+        await expect(encrypt(plaintext, password, { ...fast, context })).rejects.toMatchObject({
+          code: 'INVALID_ARGUMENT',
+        });
+        await expect(decrypt(encrypted, password, { context })).rejects.toMatchObject({
+          code: 'INVALID_ARGUMENT',
+        });
+        await expect(rewrap(encrypted, password, { ...fast, context })).rejects.toMatchObject({
+          code: 'INVALID_ARGUMENT',
+        });
+        await expect(
+          rewrap(encrypted, password, { ...fast, previousContext: context })
+        ).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
+      }
+    });
+
+    it('should keep reading an undefined context as no context', async () => {
+      // Spelled out explicitly, as an untyped caller forwarding an optional value would.
+      const context = undefined as unknown as string;
+      const encrypted = await encrypt(plaintext, password, { ...fast, context });
+
+      expect(await decrypt(encrypted, password, { context })).toBe(plaintext);
+      expect(await decrypt(encrypted, password, { context: '' })).toBe(plaintext);
+    });
+
     it('should refuse to encrypt under an empty password', async () => {
       await expect(encrypt(plaintext, '', fast)).rejects.toMatchObject({
         code: 'INVALID_ARGUMENT',

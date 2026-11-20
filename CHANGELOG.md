@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`encrypt()` coerced a plaintext that is not a string.** From untyped JavaScript,
+  `encrypt(undefined, pw)` encrypted `""`, `encrypt({ a: 1 }, pw)` encrypted `"[object Object]"`
+  and `encrypt(123, pw)` encrypted `"123"`, so the value read back was not the value written. A
+  non-string plaintext is now refused with `INVALID_ARGUMENT`. `AesGcmEncryptor` and
+  `SecureStorage` are unaffected: they serialize to JSON first and always pass a string.
+- **A context that is not a string was coerced.** `context: 42` bound to `"42"`, and any two
+  objects bound to the same `"[object Object]"`, so the binding silently stopped telling them
+  apart. `encrypt()`, `decrypt()`, `rewrap()` and `AesGcmEncryptor` now refuse a non-string
+  `context` (and `previousContext`) with `INVALID_ARGUMENT`. Leaving it out still means no
+  context.
+
 ### Documentation
 
 - **Passwords are not Unicode-normalized, and now say so.** The password's UTF-8 bytes go into
