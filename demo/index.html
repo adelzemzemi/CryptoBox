@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CryptoBox live demo</title>
+    <meta
+      name="description"
+      content="See what CryptoBox writes to localStorage, and what happens when the password is wrong or the stored value is tampered with. Runs entirely in your browser."
+    />
+    <style>
+      :root {
+        --bg: #f4f7f8;
+        --surface: #ffffff;
+        --ink: #0f172a;
+        --muted: #55637a;
+        --line: #d9e1e6;
+        --accent: #0f766e;
+        --accent-ink: #ffffff;
+        --panel: #0f172a;
+        --panel-ink: #e2e8f0;
+        --panel-muted: #94a3b8;
+        --panel-accent: #5eead4;
+        --ok: #0f766e;
+        --bad: #b42318;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b1120;
+          --surface: #111a2e;
+          --ink: #e8eef6;
+          --muted: #9aa8bd;
+          --line: #24304a;
+          --accent: #5eead4;
+          --accent-ink: #062a27;
+          --panel: #060b16;
+          --ok: #5eead4;
+          --bad: #ff9c8f;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.55 Inter,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 48px 16px 64px;
+      }
+      .eyebrow,
+      code,
+      pre,
+      .mono {
+        font-family: Menlo, ui-monospace, SFMono-Regular, Consolas, monospace;
+      }
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      h1 {
+        margin: 12px 0 12px;
+        font-size: clamp(32px, 6vw, 52px);
+        line-height: 1.05;
+        font-weight: 300;
+        letter-spacing: -0.02em;
+      }
+      h1 strong {
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .lede {
+        max-width: 62ch;
+        color: var(--muted);
+        margin: 0 0 32px;
+      }
+      h2 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 40px 0 12px;
+      }
+      h2 span {
+        color: var(--accent);
+        margin-right: 8px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--ink);
+        font: inherit;
+        font-family: Menlo, ui-monospace, monospace;
+        font-size: 14px;
+      }
+      button {
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      :is(button, input, a):focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .panels {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .panel {
+        background: var(--panel);
+        color: var(--panel-ink);
+        border-radius: 12px;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .panel header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 14px;
+        font-size: 12px;
+        color: var(--panel-muted);
+        border-bottom: 1px solid #1e293b;
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #334155;
+      }
+      .panel header .mono {
+        margin-left: 8px;
+      }
+      .panel pre {
+        margin: 0;
+        padding: 14px;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-all;
+        min-height: 150px;
+      }
+      .key {
+        color: var(--panel-muted);
+      }
+      .secured {
+        color: var(--panel-accent);
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 10px 0 0;
+      }
+      #log {
+        list-style: none;
+        margin: 16px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      #log li {
+        display: grid;
+        grid-template-columns: 210px 1fr;
+        gap: 12px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-size: 14px;
+      }
+      #log .ok {
+        color: var(--ok);
+      }
+      #log .bad {
+        color: var(--bad);
+      }
+      #log .mono {
+        font-size: 13px;
+        word-break: break-all;
+      }
+      footer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        font-size: 14px;
+        color: var(--muted);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        align-items: center;
+      }
+      footer code {
+        background: var(--panel);
+        color: var(--panel-accent);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      a {
+        color: var(--accent);
+      }
+      @media (max-width: 720px) {
+        .fields,
+        .panels,
+        #log li {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">CryptoBox 2.0 / live demo</div>
+      <h1>Browser storage, <strong>encrypted.</strong></h1>
+      <p class="lede">
+        Save one value twice: once the usual way, once through CryptoBox. Then try to read it back
+        with the wrong password, or after changing the stored bytes. Everything runs in this tab, on
+        this page's own <code>localStorage</code>. Nothing is sent anywhere.
+      </p>
+
+      <h2><span>1</span>Store a value</h2>
+      <form class="card" id="form">
+        <div class="fields">
+          <div>
+            <label for="value">Value to store</label>
+            <input id="value" value="alice@example.com, plan: pro" autocomplete="off" />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" value="correct horse battery staple" autocomplete="off" />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="save" type="submit">Save both ways</button>
+        </div>
+      </form>
+
+      <h2><span>2</span>What ends up in localStorage</h2>
+      <div class="panels">
+        <section class="panel" aria-label="Plain localStorage">
+          <header>
+            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
+            <span class="mono">localStorage.setItem()</span>
+          </header>
+          <pre id="plain" aria-live="polite">Nothing stored yet.</pre>
+        </section>
+        <section class="panel" aria-label="CryptoBox storage">
+          <header>
+            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
+            <span class="mono">storage.setSecure()</span>
+          </header>
+          <pre id="secure" aria-live="polite">Nothing stored yet.</pre>
+        </section>
+      </div>
+      <p class="note" id="info">
+        Open DevTools, Application, Local Storage to see the same two entries.
+      </p>
+
+      <h2><span>3</span>Try to read it back</h2>
+      <div class="card">
+        <div class="actions" style="margin-top: 0">
+          <button data-attempt="right" disabled>Right password</button>
+          <button data-attempt="wrong" disabled>Wrong password</button>
+          <button data-attempt="flip" disabled>Flip one stored bit</button>
+          <button data-attempt="move" disabled>Move it to another key</button>
+        </div>
+        <ul id="log" aria-live="polite"></ul>
+      </div>
+
+      <footer>
+        <code>npm install @azemzemi/cryptobox</code>
+        <a href="https://github.com/adelzemzemi/CryptoBox">Source and documentation</a>
+        <a href="https://github.com/adelzemzemi/CryptoBox/blob/main/SECURITY.md"
+          >What it does not protect against</a
+        >
+      </footer>
+    </main>
+
+    <script type="module">
+      import {
+        createSecureLocalStorage,
+        decodeBase64,
+        encodeBase64,
+        inspect,
+        isCryptoBoxError,
+      } from './cryptobox.mjs';
+
+      const PLAIN_KEY = 'demo:plain';
+      const SECURE_KEY = 'demo:secure';
+      const MOVED_KEY = 'demo:moved';
+
+      const storage = createSecureLocalStorage();
+      const $ = id => document.getElementById(id);
+      const attempts = [...document.querySelectorAll('[data-attempt]')];
+
+      function setBusy(busy) {
+        $('save').disabled = busy;
+        const empty = localStorage.getItem(SECURE_KEY) === null;
+        for (const button of attempts) button.disabled = busy || empty;
+      }
+
+      function show(target, key, value, secured) {
+        const keyLine = document.createElement('span');
+        keyLine.className = 'key';
+        keyLine.textContent = `key    ${key}\nvalue  `;
+
+        const valueLine = document.createElement('span');
+        if (secured) valueLine.className = 'secured';
+        valueLine.textContent = value;
+
+        $(target).replaceChildren(keyLine, valueLine);
+      }
+
+      function render(elapsedMs) {
+        const plain = localStorage.getItem(PLAIN_KEY);
+        const secure = localStorage.getItem(SECURE_KEY);
+        if (plain === null || secure === null) return;
+
+        show('plain', PLAIN_KEY, plain, false);
+        show('secure', SECURE_KEY, secure, true);
+
+        const { version, iterations } = inspect(secure);
+        const timing = elapsedMs === undefined ? '' : ` Written in ${Math.round(elapsedMs)} ms.`;
+        $('info').textContent =
+          `AES-256-GCM, envelope version ${version}, key derived with ` +
+          `${iterations.toLocaleString('en-US')} rounds of PBKDF2-SHA-256, bound to its storage key.` +
+          timing;
+      }
+
+      function log(label, ok, detail) {
+        const item = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = label;
+        const result = document.createElement('span');
+        result.className = `mono ${ok ? 'ok' : 'bad'}`;
+        result.textContent = detail;
+        item.append(title, result);
+        $('log').prepend(item);
+      }
+
+      async function read(label, key, password) {
+        try {
+          const value = await storage.getSecure(key, password);
+          log(label, true, `returned ${JSON.stringify(value)}`);
+        } catch (error) {
+          if (!isCryptoBoxError(error)) throw error;
+          log(label, false, `threw CryptoBoxError ${error.code}`);
+        }
+      }
+
+      const ATTEMPTS = {
+        right: () => read('Right password', SECURE_KEY, $('password').value),
+
+        wrong: () => read('Wrong password', SECURE_KEY, `${$('password').value}!`),
+
+        async flip() {
+          const original = localStorage.getItem(SECURE_KEY);
+          const bytes = decodeBase64(original);
+          bytes[bytes.length - 1] ^= 1;
+
+          localStorage.setItem(SECURE_KEY, encodeBase64(bytes));
+          try {
+            await read('One bit flipped', SECURE_KEY, $('password').value);
+          } finally {
+            localStorage.setItem(SECURE_KEY, original);
+          }
+        },
+
+        async move() {
+          localStorage.setItem(MOVED_KEY, localStorage.getItem(SECURE_KEY));
+          try {
+            await read('Moved to another key', MOVED_KEY, $('password').value);
+          } finally {
+            localStorage.removeItem(MOVED_KEY);
+          }
+        },
+      };
+
+      $('form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const value = $('value').value;
+
+        setBusy(true);
+        try {
+          localStorage.setItem(PLAIN_KEY, JSON.stringify(value));
+
+          const start = performance.now();
+          await storage.setSecure(SECURE_KEY, value, $('password').value);
+          render(performance.now() - start);
+          $('log').replaceChildren();
+        } catch (error) {
+          $('info').textContent = isCryptoBoxError(error)
+            ? `Could not store the value: ${error.code}`
+            : 'Could not store the value: localStorage is not available in this tab.';
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      for (const button of attempts) {
+        button.addEventListener('click', async () => {
+          setBusy(true);
+          try {
+            await ATTEMPTS[button.dataset.attempt]();
+          } finally {
+            setBusy(false);
+          }
+        });
+      }
+
+      try {
+        render();
+        setBusy(false);
+      } catch {
+        // Leftover entries from an older visit that no longer parse: start clean.
+        localStorage.removeItem(PLAIN_KEY);
+        localStorage.removeItem(SECURE_KEY);
+      }
+    </script>
+  </body>
+</html>
