@@ -108,7 +108,16 @@ design and no amount of review changes that.
 
 ## Internal review history
 
-- **Version 2.0.0** (August 2026): Security, architecture and packaging review
+- **Unreleased** (November 2026): Review of 2.1.0
+  - `encrypt()` refuses a plaintext that is not a string, and every entry point refuses a context that is not a string, instead of coercing them: an untyped caller could encrypt `undefined` as `""`, and any two objects bound to the same context
+  - An `AesGcmEncryptor` refuses a per-call iteration count above its own `maxIterations`, which it would otherwise write and then refuse to read
+  - Passwords are used without Unicode normalization; this is now documented in the threat model and pinned by a test, since normalizing would change the key of existing non-ASCII passwords
+  - The packed package is exercised in CI under Bun, Deno and headless Chrome, not only Node
+  - Not covered by this review: other browser engines than Chromium, and any form of external validation
+- **Version 2.1.0** (November 2026): Read-side iteration cap
+  - `maxIterations` bounds the PBKDF2 count a read will derive with. The count is read from the envelope before the tag can be checked, so whoever can write to the store could make a failing read cost up to 5,000,000 iterations; with the cap set, an envelope declaring more is refused before any key derivation
+  - An encryptor refuses a cap lower than the count it writes with
+- **Version 2.0.0** (November 2026): Security, architecture and packaging review
   - PBKDF2 raised from 100,000 to 600,000 iterations, with a versioned envelope so the parameter can be raised again later
   - The envelope header is authenticated as AES-GCM additional data, so the declared version and iteration count are tamper-evident; with `allowLegacy: false`, a downgrade to the 1.x format is rejected
   - Ciphertexts are bound to a caller-supplied context, and `SecureStorage` binds each value to its storage key, so a ciphertext relocated by an attacker with write access no longer decrypts
