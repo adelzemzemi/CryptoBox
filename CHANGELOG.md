@@ -23,6 +23,15 @@ All notable changes to this project will be documented in this file.
   `INVALID_ITERATIONS`. The write is now refused up front with `INVALID_ARGUMENT`, the code the
   constructor uses for the same contradiction.
 
+### Changed
+
+- **CI now runs the package on every runtime the README names.** The packed tarball is installed
+  into a consumer project and exercised under Bun and Deno, and the built module is loaded in
+  headless Chrome. Each run checks a round-trip, that a mismatched context and a wrong password
+  fail with `DECRYPTION_FAILED`, and that a frozen 1.x ciphertext and a frozen context-bound 2.x
+  ciphertext still decrypt. Until now only Node was tested. `playwright-core` is a new dev
+  dependency; it drives the Chrome already installed on the runner, so no browser is downloaded.
+
 ### Documentation
 
 - **Passwords are not Unicode-normalized, and now say so.** The password's UTF-8 bytes go into

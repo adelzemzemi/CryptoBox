@@ -60,6 +60,7 @@ a password shipped inside the bundle protects nothing: see [Security](#security)
 - **A second implementation agrees**: envelopes are written and read by OpenSSL through `node:crypto`, in both directions
 - **Hostile input**: truncations and single-bit flips of a valid ciphertext, and thousands of random buffers, all end in a documented error
 - **Coverage is a gate**: 100% of lines, functions and statements, enforced in CI on Node.js 20, 22 and 24
+- **Every runtime it names**: the packed tarball is installed and exercised under Bun and Deno, and the built module in headless Chrome, on every change
 - **Traceable releases**: published from CI with npm provenance, with no long-lived token
 
 It has not been audited by a third party. [SECURITY.md](SECURITY.md) holds the threat
