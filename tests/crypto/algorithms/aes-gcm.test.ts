@@ -135,6 +135,25 @@ describe('AES-GCM Encryption', () => {
       });
     });
 
+    // Normalisation is documented as the caller's job. Doing it here would change the
+    // key of every non-ASCII password already in use; this pins that it does not.
+    it('should treat the NFC and NFD forms of a password as different passwords', async () => {
+      const composed = 'café';
+      const decomposed = 'café';
+
+      const underComposed = await encrypt(plaintext, composed, fast);
+      const underDecomposed = await encrypt(plaintext, decomposed, fast);
+
+      await expect(decrypt(underComposed, decomposed)).rejects.toMatchObject({
+        code: 'DECRYPTION_FAILED',
+      });
+      await expect(decrypt(underDecomposed, composed)).rejects.toMatchObject({
+        code: 'DECRYPTION_FAILED',
+      });
+      // The documented remedy: normalizing on both sides makes them agree.
+      expect(await decrypt(underComposed, decomposed.normalize('NFC'))).toBe(plaintext);
+    });
+
     it('should still read 1.x data that was written under an empty password', async () => {
       const legacy = await encryptV0(plaintext, '');
       expect(await decrypt(legacy, '')).toBe(plaintext);

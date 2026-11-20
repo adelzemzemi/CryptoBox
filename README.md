@@ -126,6 +126,14 @@ Any JSON-serializable value works, including `null`. Values JSON cannot represen
 `getSecure()` returns `null` both for a stored `null` and for a key that does not
 exist. Use `has()` when the difference matters.
 
+A password is used exactly as given: its UTF-8 bytes go into the key derivation,
+with no Unicode normalization. `café` typed with a precomposed `é` (NFC) and with
+`e` plus a combining accent (NFD) look identical but are two different passwords,
+and one does not decrypt what the other wrote. Keyboards, input methods and
+operating systems do not all produce the same form, so normalize the password the
+same way before every call, for example with `password.normalize('NFC')`. Data
+already stored keeps needing the form it was written with.
+
 ### Typed errors
 
 Every failure raised by the package is a `CryptoBoxError` carrying a stable `code`.

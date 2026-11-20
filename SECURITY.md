@@ -58,6 +58,11 @@ to another key or context stops decrypting.
   password safe. PBKDF2 is not memory-hard, so dedicated hardware tests candidates
   far faster than a browser does. It is used because it is the password-based KDF
   Web Crypto provides, and the package takes no dependencies.
+- **A password in another Unicode form.** The password's UTF-8 bytes are used as
+  given, without normalization, so the NFC and NFD forms of the same visible text
+  (`café` precomposed or with a combining accent) are different passwords. Data
+  written under one does not decrypt under the other. Normalize the password
+  consistently before every call, for example with `password.normalize('NFC')`.
 - **Values written by 1.x, until they are migrated.** They carry no binding. While
   `allowLegacy` is on, which is the default, an old 1.x ciphertext is accepted
   under any key. Migrate with `rewrap()` from a store you trust, then set

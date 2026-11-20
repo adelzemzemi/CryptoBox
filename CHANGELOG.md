@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Documentation
+
+- **Passwords are not Unicode-normalized, and now say so.** The password's UTF-8 bytes go into
+  PBKDF2 as given, so the NFC and NFD forms of the same visible text (`café` precomposed, or
+  with a combining accent) are different passwords: data written under one fails to decrypt
+  under the other with `DECRYPTION_FAILED`. Normalizing inside the package would change the key
+  of every non-ASCII password already in use, so the behaviour is kept and pinned by a test. The
+  README and the threat model in `SECURITY.md` tell callers to normalize consistently before
+  every call, for example with `password.normalize('NFC')`.
+
 ## [2.1.0] - 2026-11-20
 
 ### Added
