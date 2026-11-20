@@ -34,6 +34,8 @@ See [SECURITY.md](SECURITY.md) for details.
 
 ## Development
 
+Building needs Node.js 22 or later. The published package still runs on Node.js 20.
+
 ```bash
 git clone https://github.com/adelzemzemi/cryptobox.git
 cd cryptobox
