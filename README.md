@@ -280,8 +280,10 @@ ever wrote with:
 const encryptor = new AesGcmEncryptor({ maxIterations: 600_000 });
 ```
 
-A value declaring more is then refused with `INVALID_ITERATIONS` before any key
-is derived. The same encryptor refuses to write above its own cap, so a per-call
+A value declaring more is then refused with `INVALID_ITERATIONS` without deriving
+a key at that count. While `allowLegacy` is on (the default), the same bytes are
+still tried once as a headerless 1.x value, at its fixed 100,000 iterations,
+before the refusal; with `allowLegacy: false` nothing is derived at all. The same encryptor refuses to write above its own cap, so a per-call
 `iterations` higher than `maxIterations` fails with `INVALID_ARGUMENT` instead of
 producing a value it could not read back. The cap is not on by default, because a store may hold values written
 with a higher count than the one configured today.

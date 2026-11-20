@@ -74,7 +74,8 @@ to another key or context stops decrypting.
   values. Tampering is detected, not prevented. They can also raise the iteration
   count declared by a value, which is used before the tag is checked: the read
   still fails, but only after up to 5,000,000 iterations. `maxIterations` lowers
-  that bound to the count the application writes with.
+  that bound to the count the application writes with. While 1.x values are still
+  accepted, a refused value also costs one derivation at the 1.x count of 100,000.
 - **Metadata.** Storage keys, the size of each value and when it changes are
   visible.
 
@@ -115,7 +116,7 @@ design and no amount of review changes that.
   - The packed package is exercised in CI under Bun, Deno and headless Chrome, not only Node
   - Not covered by this review: other browser engines than Chromium, and any form of external validation
 - **Version 2.1.0** (November 2026): Read-side iteration cap
-  - `maxIterations` bounds the PBKDF2 count a read will derive with. The count is read from the envelope before the tag can be checked, so whoever can write to the store could make a failing read cost up to 5,000,000 iterations; with the cap set, an envelope declaring more is refused before any key derivation
+  - `maxIterations` bounds the PBKDF2 count a read will derive with. The count is read from the envelope before the tag can be checked, so whoever can write to the store could make a failing read cost up to 5,000,000 iterations; with the cap set, an envelope declaring more is refused without deriving at that count (one 100,000-iteration attempt remains while 1.x values are accepted)
   - An encryptor refuses a cap lower than the count it writes with
 - **Version 2.0.0** (November 2026): Security, architecture and packaging review
   - PBKDF2 raised from 100,000 to 600,000 iterations, with a versioned envelope so the parameter can be raised again later

@@ -41,6 +41,11 @@ All notable changes to this project will be documented in this file.
   of every non-ASCII password already in use, so the behaviour is kept and pinned by a test. The
   README and the threat model in `SECURITY.md` tell callers to normalize consistently before
   every call, for example with `password.normalize('NFC')`.
+- **What a `maxIterations` refusal still costs.** The 2.1.0 notes said an envelope above the cap
+  is refused before any key derivation. That holds with `allowLegacy: false`. While legacy reads
+  are on (the default), the same bytes are still tried once as a headerless 1.x value, at its
+  fixed 100,000 iterations, before `INVALID_ITERATIONS` is thrown. The cost is bounded and far
+  below the cap; the README, `SECURITY.md` and the option's documentation now say so.
 
 ## [2.1.0] - 2026-11-20
 
