@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { timingSafeEqual, timingSafeEqualBuffer, randomDelay } from '@security/timing-safe';
 
 describe('Timing-Safe Utilities', () => {
@@ -65,12 +65,23 @@ describe('Timing-Safe Utilities', () => {
   });
 
   describe('randomDelay', () => {
-    it('should delay execution', async () => {
-      const start = Date.now();
-      await randomDelay(10, 20);
-      const elapsed = Date.now() - start;
-      expect(elapsed).toBeGreaterThanOrEqual(10);
-      expect(elapsed).toBeLessThanOrEqual(50); // 20ms + tolerance
+    it('should wait for a duration inside the requested bounds', async () => {
+      vi.useFakeTimers();
+      const schedule = vi.spyOn(globalThis, 'setTimeout');
+
+      try {
+        const pending = randomDelay(10, 20);
+        const delay = schedule.mock.calls[0]?.[1];
+
+        expect(delay).toBeGreaterThanOrEqual(10);
+        expect(delay).toBeLessThan(20);
+
+        await vi.advanceTimersByTimeAsync(20);
+        await pending;
+      } finally {
+        schedule.mockRestore();
+        vi.useRealTimers();
+      }
     });
 
     it('should return a promise', () => {

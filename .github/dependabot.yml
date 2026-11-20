@@ -9,6 +9,14 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    ignore:
+      # Vitest 5 needs Node 22, and the suite still has to run on Node 20.
+      - dependency-name: vitest
+        update-types:
+          - version-update:semver-major
+      - dependency-name: '@vitest/*'
+        update-types:
+          - version-update:semver-major
     groups:
       dev-dependencies:
         dependency-type: development
