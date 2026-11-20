@@ -18,6 +18,9 @@ stores it encrypted under a password the user supplies. The copy becomes unreada
 a modified value is rejected instead of returned, and a value moved to another key
 stops decrypting.
 
+**[Try the live demo](https://adelzemzemi.github.io/CryptoBox/)**: store a value, then read
+it back with the wrong password or after flipping one stored bit.
+
 ## What changes in your storage
 
 ```typescript
