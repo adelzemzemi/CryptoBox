@@ -10,11 +10,23 @@ updates:
     labels:
       - dependencies
     ignore:
-      # Vitest 5 needs Node 22, and the suite still has to run on Node 20.
+      # These majors need Node 22, and the suite still has to run on Node 20.
+      # Lift them together when Node 20 support is dropped.
       - dependency-name: vitest
         update-types:
           - version-update:semver-major
       - dependency-name: '@vitest/*'
+        update-types:
+          - version-update:semver-major
+      - dependency-name: jsdom
+        update-types:
+          - version-update:semver-major
+      # Kept on the oldest supported line so a newer Node API cannot slip in unnoticed.
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
+      # typescript-eslint 8 does not accept TypeScript 7 yet.
+      - dependency-name: typescript
         update-types:
           - version-update:semver-major
     groups:
