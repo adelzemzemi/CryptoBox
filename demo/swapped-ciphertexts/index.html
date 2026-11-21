@@ -6,9 +6,21 @@
     <title>Your encrypted localStorage values can be swapped</title>
     <meta
       name="description"
-      content="Authenticated encryption rejects a modified value. It says nothing about a value that was moved. How I found that gap in my own library, and how AES-GCM closes it without storing a single extra byte."
+      content="Authenticated encryption rejects a modified value, not a moved one. How I found that gap in my own library, and how AES-GCM closes it with no extra byte."
     />
     <meta name="author" content="Adel Zemzemi" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "Your encrypted localStorage values can be swapped",
+        "datePublished": "2026-11-20",
+        "url": "https://adelzemzemi.github.io/CryptoBox/swapped-ciphertexts/",
+        "mainEntityOfPage": "https://adelzemzemi.github.io/CryptoBox/swapped-ciphertexts/",
+        "image": "https://raw.githubusercontent.com/adelzemzemi/CryptoBox/main/.github/assets/header-dark.webp",
+        "author": { "@type": "Person", "name": "Adel Zemzemi", "url": "https://adelzemzemi.com" }
+      }
+    </script>
     <link rel="canonical" href="https://adelzemzemi.github.io/CryptoBox/swapped-ciphertexts/" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="Your encrypted localStorage values can be swapped" />
