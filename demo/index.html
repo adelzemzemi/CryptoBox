@@ -9,6 +9,10 @@
       content="See what CryptoBox writes to localStorage, and what happens when the password is wrong or the stored value is tampered with. Runs entirely in your browser."
     />
     <link rel="canonical" href="https://adelzemzemi.github.io/CryptoBox/" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d7a70' stroke-width='2'%3E%3Crect x='4' y='10' width='16' height='11' rx='3'/%3E%3Cpath d='M8 10V7a4 4 0 0 1 8 0v3' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
     <meta property="og:type" content="website" />
     <meta
       property="og:title"
@@ -39,186 +43,401 @@
     </script>
     <style>
       :root {
-        --bg: #f4f7f8;
+        --bg: #fafbfc;
         --surface: #ffffff;
-        --ink: #0f172a;
-        --muted: #55637a;
-        --line: #d9e1e6;
-        --accent: #0f766e;
+        --sunken: #f3f5f7;
+        --ink: #0b1220;
+        --muted: #5b6678;
+        --faint: #8491a3;
+        --line: #e4e8ee;
+        --line-strong: #d3d9e2;
+        --accent: #0d7a70;
+        --accent-soft: #e6f4f2;
         --accent-ink: #ffffff;
-        --panel: #0f172a;
-        --panel-ink: #e2e8f0;
-        --panel-muted: #94a3b8;
+        --panel: #0b1220;
+        --panel-line: #1b2536;
+        --panel-ink: #dfe6f0;
+        --panel-muted: #8391a7;
         --panel-accent: #5eead4;
-        --ok: #0f766e;
+        --panel-warn: #fbbf77;
+        --ok: #0d7a70;
+        --ok-soft: #e6f4f2;
         --bad: #b42318;
+        --bad-soft: #fdecea;
+        --shadow: 0 1px 2px rgb(11 18 32 / 4%), 0 8px 24px -12px rgb(11 18 32 / 12%);
+        --radius: 14px;
+        --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #0b1120;
-          --surface: #111a2e;
-          --ink: #e8eef6;
-          --muted: #9aa8bd;
-          --line: #24304a;
+          --bg: #080d18;
+          --surface: #0e1524;
+          --sunken: #0a101c;
+          --ink: #e9eef6;
+          --muted: #9aa7ba;
+          --faint: #6f7d92;
+          --line: #1c2638;
+          --line-strong: #2a3650;
           --accent: #5eead4;
-          --accent-ink: #062a27;
-          --panel: #060b16;
+          --accent-soft: #0f2a2b;
+          --accent-ink: #052b27;
+          --panel: #050912;
+          --panel-line: #161f30;
           --ok: #5eead4;
+          --ok-soft: #0f2a2b;
           --bad: #ff9c8f;
+          --bad-soft: #33161a;
+          --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px -16px rgb(0 0 0 / 60%);
         }
       }
-      * {
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
       }
       body {
         margin: 0;
         background: var(--bg);
         color: var(--ink);
         font:
-          16px/1.55 Inter,
+          16px/1.6 Inter,
           system-ui,
           -apple-system,
           'Segoe UI',
+          Roboto,
           sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
       }
-      main {
-        max-width: 980px;
-        margin: 0 auto;
-        padding: 48px 16px 64px;
+      a {
+        color: inherit;
+        text-decoration: none;
       }
-      .eyebrow,
       code,
       pre,
       .mono {
-        font-family: Menlo, ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-family: var(--mono);
+      }
+      .wrap {
+        width: min(1040px, 100% - 40px);
+        margin-inline: auto;
+      }
+      :is(a, button, input):focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 6px;
+      }
+
+      /* Top bar */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: color-mix(in srgb, var(--bg) 82%, transparent);
+        backdrop-filter: saturate(160%) blur(12px);
+        border-bottom: 1px solid var(--line);
+      }
+      .topbar .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        height: 60px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .brand svg {
+        width: 22px;
+        height: 22px;
+        color: var(--accent);
+      }
+      .brand small {
+        font: 500 11px/1 var(--mono);
+        color: var(--muted);
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        padding: 4px 8px;
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .nav a {
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition:
+          color 0.15s,
+          background 0.15s;
+      }
+      .nav a:hover {
+        color: var(--ink);
+        background: var(--sunken);
+      }
+      .nav a.cta {
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        margin-left: 6px;
+      }
+
+      /* Hero */
+      .hero {
+        padding: 72px 0 56px;
       }
       .eyebrow {
-        font-size: 12px;
-        letter-spacing: 0.14em;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font: 500 12px/1 var(--mono);
+        letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--accent);
       }
+      .eyebrow::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
       h1 {
-        margin: 12px 0 12px;
-        font-size: clamp(32px, 6vw, 52px);
-        line-height: 1.05;
-        font-weight: 300;
-        letter-spacing: -0.02em;
+        margin: 18px 0 18px;
+        font-size: clamp(36px, 6.4vw, 60px);
+        line-height: 1.04;
+        font-weight: 650;
+        letter-spacing: -0.035em;
+        text-wrap: balance;
       }
       h1 strong {
-        font-weight: 700;
+        font-weight: inherit;
         color: var(--accent);
       }
       .lede {
-        max-width: 62ch;
+        max-width: 60ch;
+        margin: 0;
+        font-size: 18px;
         color: var(--muted);
-        margin: 0 0 32px;
+        text-wrap: pretty;
       }
-      h2 {
-        font-size: 14px;
-        font-weight: 600;
-        margin: 40px 0 12px;
+      .lede code {
+        font-size: 0.9em;
+        color: var(--ink);
       }
-      h2 span {
-        color: var(--accent);
-        margin-right: 8px;
+      .hero-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px 20px;
+        margin-top: 32px;
       }
-      .card {
+      .install {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 100%;
+        padding: 6px 6px 6px 16px;
+        background: var(--panel);
+        color: var(--panel-ink);
+        border-radius: 12px;
+        font: 14px/1 var(--mono);
+        box-shadow: var(--shadow);
+      }
+      .install .prompt {
+        color: var(--panel-muted);
+        user-select: none;
+      }
+      .install code {
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .install button {
+        flex: none;
+        min-width: 64px;
+        padding: 9px 12px;
+        border: 1px solid var(--panel-line);
+        border-radius: 8px;
+        background: #121b2c;
+        color: var(--panel-ink);
+        font: 600 12px/1 inherit;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      .install button:hover {
+        background: #1a2540;
+      }
+      .facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .facts li {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--surface);
+      }
+
+      /* Steps */
+      .steps {
+        display: grid;
+        gap: 20px;
+        padding-bottom: 72px;
+      }
+      .step {
         background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 20px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 28px;
+      }
+      .step-head {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 16px;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .num {
+        grid-row: span 2;
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font: 600 14px/1 var(--mono);
+      }
+      h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 650;
+        letter-spacing: -0.015em;
+      }
+      .step-head p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--muted);
       }
       .fields {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr auto;
         gap: 16px;
+        align-items: end;
       }
       label {
         display: block;
+        margin-bottom: 8px;
         font-size: 13px;
         font-weight: 600;
-        margin-bottom: 6px;
+        color: var(--muted);
       }
       input {
         width: 100%;
-        padding: 10px 12px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--bg);
+        height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: 10px;
+        background: var(--sunken);
         color: var(--ink);
-        font: inherit;
-        font-family: Menlo, ui-monospace, monospace;
-        font-size: 14px;
+        font: 14px/1 var(--mono);
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-soft);
       }
       button {
         font: inherit;
-        font-size: 14px;
-        font-weight: 600;
-        padding: 10px 16px;
-        border-radius: 8px;
-        border: 1px solid var(--line);
-        background: var(--surface);
-        color: var(--ink);
         cursor: pointer;
       }
-      button.primary {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: var(--accent-ink);
-      }
       button:disabled {
-        opacity: 0.5;
+        opacity: 0.45;
         cursor: not-allowed;
       }
-      :is(button, input, a):focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
+      .primary {
+        height: 44px;
+        padding: 0 20px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+        transition: filter 0.15s;
       }
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 16px;
+      .primary:hover:not(:disabled) {
+        filter: brightness(1.08);
       }
+
+      /* Storage panels */
       .panels {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 16px;
       }
       .panel {
+        min-width: 0;
+        overflow: hidden;
         background: var(--panel);
         color: var(--panel-ink);
+        border: 1px solid var(--panel-line);
         border-radius: 12px;
-        overflow: hidden;
-        min-width: 0;
       }
       .panel header {
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 10px 14px;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--panel-line);
         font-size: 12px;
         color: var(--panel-muted);
-        border-bottom: 1px solid #1e293b;
       }
-      .dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: #334155;
+      .tag {
+        flex: none;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font: 600 11px/1 var(--mono);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
       }
-      .panel header .mono {
-        margin-left: 8px;
+      .tag.warn {
+        color: var(--panel-warn);
+        background: rgb(251 191 119 / 12%);
+      }
+      .tag.safe {
+        color: var(--panel-accent);
+        background: rgb(94 234 212 / 12%);
       }
       .panel pre {
         margin: 0;
-        padding: 14px;
+        min-height: 148px;
+        padding: 16px;
         font-size: 13px;
-        line-height: 1.6;
+        line-height: 1.65;
         white-space: pre-wrap;
         word-break: break-all;
-        min-height: 150px;
       }
       .key {
         color: var(--panel-muted);
@@ -226,135 +445,430 @@
       .secured {
         color: var(--panel-accent);
       }
+      .specs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1px;
+        margin: 16px 0 0;
+        overflow: hidden;
+        background: var(--line);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .specs[hidden] {
+        display: none;
+      }
+      .specs div {
+        padding: 14px 16px;
+        background: var(--surface);
+      }
+      .specs dt {
+        font-size: 12px;
+        color: var(--faint);
+      }
+      .specs dd {
+        margin: 2px 0 0;
+        font: 600 14px/1.4 var(--mono);
+      }
       .note {
+        margin: 14px 0 0;
         font-size: 13px;
         color: var(--muted);
-        margin: 10px 0 0;
+      }
+
+      /* Attempts */
+      .attempts {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .attempts button {
+        display: grid;
+        gap: 4px;
+        align-content: start;
+        padding: 16px;
+        border: 1px solid var(--line-strong);
+        border-radius: 12px;
+        background: var(--surface);
+        color: var(--ink);
+        text-align: left;
+        transition:
+          border-color 0.15s,
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      .attempts button:hover:not(:disabled) {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-soft);
+        transform: translateY(-1px);
+      }
+      .attempts strong {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .attempts span {
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--muted);
       }
       #log {
-        list-style: none;
-        margin: 16px 0 0;
-        padding: 0;
         display: grid;
         gap: 8px;
+        margin: 20px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      #log:empty::before {
+        content: 'Results appear here. Save a value first, then try each read.';
+        padding: 18px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 12px;
+        font-size: 14px;
+        color: var(--faint);
+        text-align: center;
       }
       #log li {
         display: grid;
-        grid-template-columns: 210px 1fr;
+        grid-template-columns: 190px 92px 1fr;
         gap: 12px;
-        padding: 10px 12px;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--sunken);
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: 12px;
         font-size: 14px;
+        animation: rise 0.2s ease-out;
       }
-      #log .ok {
+      #log .badge {
+        justify-self: start;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font: 600 11px/1 var(--mono);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      #log .badge.ok {
         color: var(--ok);
+        background: var(--ok-soft);
       }
-      #log .bad {
+      #log .badge.bad {
         color: var(--bad);
+        background: var(--bad-soft);
       }
       #log .mono {
         font-size: 13px;
+        color: var(--muted);
         word-break: break-all;
       }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+      }
+
+      /* Limits */
+      .limits {
+        padding: 56px 0 72px;
+        border-top: 1px solid var(--line);
+      }
+      .limits h2 {
+        font-size: 24px;
+        letter-spacing: -0.02em;
+      }
+      .limits > .wrap > p {
+        max-width: 60ch;
+        margin: 8px 0 28px;
+        color: var(--muted);
+      }
+      .limit-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .limit-grid article {
+        padding: 20px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+      }
+      .limit-grid h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        font-weight: 650;
+      }
+      .limit-grid p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      /* Footer */
       footer {
-        margin-top: 48px;
-        padding-top: 20px;
         border-top: 1px solid var(--line);
         font-size: 14px;
         color: var(--muted);
+      }
+      footer .wrap {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px 20px;
         align-items: center;
+        justify-content: space-between;
+        gap: 12px 24px;
+        padding-block: 28px;
       }
-      footer code {
-        background: var(--panel);
-        color: var(--panel-accent);
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-size: 13px;
+      footer nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 24px;
       }
-      a {
-        color: var(--accent);
+      footer a:hover {
+        color: var(--ink);
+      }
+
+      @media (max-width: 860px) {
+        .attempts {
+          grid-template-columns: 1fr 1fr;
+        }
+        .specs {
+          grid-template-columns: 1fr 1fr;
+        }
+        .limit-grid {
+          grid-template-columns: 1fr;
+        }
       }
       @media (max-width: 720px) {
+        .wrap {
+          width: min(1040px, 100% - 32px);
+        }
+        .hero {
+          padding: 48px 0 40px;
+        }
+        .step {
+          padding: 20px;
+        }
         .fields,
-        .panels,
-        #log li {
+        .panels {
           grid-template-columns: 1fr;
+        }
+        .nav a:not(.cta) {
+          display: none;
+        }
+        #log li {
+          grid-template-columns: 1fr auto;
+        }
+        #log .mono {
+          grid-column: 1 / -1;
+        }
+      }
+      @media (max-width: 480px) {
+        .attempts {
+          grid-template-columns: 1fr;
+        }
+        .install {
+          width: 100%;
+          justify-content: space-between;
+          font-size: 12.5px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+          scroll-behavior: auto !important;
         }
       }
     </style>
   </head>
   <body>
+    <header class="topbar">
+      <div class="wrap">
+        <a class="brand" href="./" aria-label="CryptoBox demo">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <rect x="4" y="10" width="16" height="11" rx="3" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke-linecap="round" />
+          </svg>
+          CryptoBox <small>live demo</small>
+        </a>
+        <nav class="nav" aria-label="Project">
+          <a href="swapped-ciphertexts/">Why version 2</a>
+          <a href="https://www.npmjs.com/package/@azemzemi/cryptobox">npm</a>
+          <a class="cta" href="https://github.com/adelzemzemi/CryptoBox">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
     <main>
-      <div class="eyebrow">CryptoBox 2.0 / live demo</div>
-      <h1>Browser storage, <strong>encrypted.</strong></h1>
-      <p class="lede">
-        Save one value twice: once the usual way, once through CryptoBox. Then try to read it back
-        with the wrong password, or after changing the stored bytes. Everything runs in this tab, on
-        this page's own <code>localStorage</code>. Nothing is sent anywhere.
-      </p>
-
-      <h2><span>1</span>Store a value</h2>
-      <form class="card" id="form">
-        <div class="fields">
-          <div>
-            <label for="value">Value to store</label>
-            <input id="value" value="alice@example.com, plan: pro" autocomplete="off" />
+      <section class="hero wrap">
+        <div class="eyebrow">Runs entirely in this tab</div>
+        <h1>Browser storage, <strong>encrypted.</strong></h1>
+        <p class="lede">
+          Save one value twice: once the usual way, once through CryptoBox. Then try to read it back
+          with the wrong password, or after changing the stored bytes. Everything runs in this tab,
+          on this page's own <code>localStorage</code>. Nothing is sent anywhere.
+        </p>
+        <div class="hero-row">
+          <div class="install">
+            <span class="prompt" aria-hidden="true">$</span>
+            <code id="install">npm install @azemzemi/cryptobox</code>
+            <button id="copy" type="button">Copy</button>
           </div>
-          <div>
-            <label for="password">Password</label>
-            <input id="password" value="correct horse battery staple" autocomplete="off" />
-          </div>
+          <ul class="facts">
+            <li>AES-256-GCM</li>
+            <li>Web Crypto API</li>
+            <li>Zero dependencies</li>
+          </ul>
         </div>
-        <div class="actions">
-          <button class="primary" id="save" type="submit">Save both ways</button>
-        </div>
-      </form>
+      </section>
 
-      <h2><span>2</span>What ends up in localStorage</h2>
-      <div class="panels">
-        <section class="panel" aria-label="Plain localStorage">
-          <header>
-            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
-            <span class="mono">localStorage.setItem()</span>
-          </header>
-          <pre id="plain" aria-live="polite">Nothing stored yet.</pre>
+      <div class="steps wrap">
+        <section class="step" aria-labelledby="step-store">
+          <div class="step-head">
+            <span class="num" aria-hidden="true">1</span>
+            <h2 id="step-store">Store a value</h2>
+            <p>Pick any value and any password. Both stay in this tab.</p>
+          </div>
+          <form id="form">
+            <div class="fields">
+              <div>
+                <label for="value">Value to store</label>
+                <input id="value" value="alice@example.com, plan: pro" autocomplete="off" />
+              </div>
+              <div>
+                <label for="password">Password</label>
+                <input id="password" value="correct horse battery staple" autocomplete="off" />
+              </div>
+              <button class="primary" id="save" type="submit">Save both ways</button>
+            </div>
+          </form>
         </section>
-        <section class="panel" aria-label="CryptoBox storage">
-          <header>
-            <i class="dot"></i><i class="dot"></i><i class="dot"></i>
-            <span class="mono">storage.setSecure()</span>
-          </header>
-          <pre id="secure" aria-live="polite">Nothing stored yet.</pre>
+
+        <section class="step" aria-labelledby="step-look">
+          <div class="step-head">
+            <span class="num" aria-hidden="true">2</span>
+            <h2 id="step-look">What ends up in localStorage</h2>
+            <p>The same value, as anyone with a copy of the storage would see it.</p>
+          </div>
+          <div class="panels">
+            <section class="panel" aria-label="Plain localStorage">
+              <header>
+                <span class="mono">localStorage.setItem()</span>
+                <span class="tag warn">Readable</span>
+              </header>
+              <pre id="plain" aria-live="polite">Nothing stored yet.</pre>
+            </section>
+            <section class="panel" aria-label="CryptoBox storage">
+              <header>
+                <span class="mono">storage.setSecure()</span>
+                <span class="tag safe">Encrypted</span>
+              </header>
+              <pre id="secure" aria-live="polite">Nothing stored yet.</pre>
+            </section>
+          </div>
+          <dl class="specs" id="specs" hidden>
+            <div>
+              <dt>Cipher</dt>
+              <dd>AES-256-GCM</dd>
+            </div>
+            <div>
+              <dt>Envelope</dt>
+              <dd id="spec-version"></dd>
+            </div>
+            <div>
+              <dt>PBKDF2-SHA-256 rounds</dt>
+              <dd id="spec-iterations"></dd>
+            </div>
+            <div>
+              <dt>Written in</dt>
+              <dd id="spec-time"></dd>
+            </div>
+          </dl>
+          <p class="note" id="info">
+            Open DevTools, Application, Local Storage to see the same two entries.
+          </p>
+        </section>
+
+        <section class="step" aria-labelledby="step-read">
+          <div class="step-head">
+            <span class="num" aria-hidden="true">3</span>
+            <h2 id="step-read">Try to read it back</h2>
+            <p>One read should succeed. The three others must be refused.</p>
+          </div>
+          <div class="attempts">
+            <button data-attempt="right" disabled>
+              <strong>Right password</strong>
+              <span>The value comes back as it was stored.</span>
+            </button>
+            <button data-attempt="wrong" disabled>
+              <strong>Wrong password</strong>
+              <span>One extra character at the end.</span>
+            </button>
+            <button data-attempt="flip" disabled>
+              <strong>Flip one stored bit</strong>
+              <span>The smallest possible tampering.</span>
+            </button>
+            <button data-attempt="move" disabled>
+              <strong>Move it to another key</strong>
+              <span>Same bytes, copied under a different name.</span>
+            </button>
+          </div>
+          <ul id="log" aria-live="polite"></ul>
         </section>
       </div>
-      <p class="note" id="info">
-        Open DevTools, Application, Local Storage to see the same two entries.
-      </p>
 
-      <h2><span>3</span>Try to read it back</h2>
-      <div class="card">
-        <div class="actions" style="margin-top: 0">
-          <button data-attempt="right" disabled>Right password</button>
-          <button data-attempt="wrong" disabled>Wrong password</button>
-          <button data-attempt="flip" disabled>Flip one stored bit</button>
-          <button data-attempt="move" disabled>Move it to another key</button>
+      <section class="limits" aria-labelledby="limits-title">
+        <div class="wrap">
+          <h2 id="limits-title">What it does not protect against</h2>
+          <p>
+            A security library that promises too much is worse than none. These limits are part of
+            the design, and they are written in the
+            <a href="https://github.com/adelzemzemi/CryptoBox/blob/main/SECURITY.md"
+              ><u>threat model</u></a
+            >.
+          </p>
+          <div class="limit-grid">
+            <article>
+              <h3>Script running in your page</h3>
+              <p>
+                XSS or a compromised dependency sees the password when it is typed and the value
+                when it is decrypted.
+              </p>
+            </article>
+            <article>
+              <h3>Rollback and deletion</h3>
+              <p>
+                An earlier value of the same key, put back in place, still decrypts. Whoever can
+                write can also erase.
+              </p>
+            </article>
+            <article>
+              <h3>No third-party audit</h3>
+              <p>
+                The format is checked against OpenSSL and frozen ciphertexts in the test suite, not
+                by an external auditor.
+              </p>
+            </article>
+          </div>
         </div>
-        <ul id="log" aria-live="polite"></ul>
-      </div>
-
-      <footer>
-        <code>npm install @azemzemi/cryptobox</code>
-        <a href="https://github.com/adelzemzemi/CryptoBox">Source and documentation</a>
-        <a href="swapped-ciphertexts/">Why version 2: swapped ciphertexts</a>
-        <a href="https://github.com/adelzemzemi/CryptoBox/blob/main/SECURITY.md"
-          >What it does not protect against</a
-        >
-      </footer>
+      </section>
     </main>
+
+    <footer>
+      <div class="wrap">
+        <span>CryptoBox, MIT licensed. Built by Adel Zemzemi.</span>
+        <nav aria-label="Links">
+          <a href="https://github.com/adelzemzemi/CryptoBox">Source and documentation</a>
+          <a href="swapped-ciphertexts/">Why version 2: swapped ciphertexts</a>
+          <a href="https://github.com/adelzemzemi/CryptoBox/blob/main/CHANGELOG.md">Changelog</a>
+        </nav>
+      </div>
+    </footer>
 
     <script type="module">
       import {
@@ -400,31 +914,36 @@
         show('secure', SECURE_KEY, secure, true);
 
         const { version, iterations } = inspect(secure);
-        const timing = elapsedMs === undefined ? '' : ` Written in ${Math.round(elapsedMs)} ms.`;
+        $('spec-version').textContent = `version ${version}`;
+        $('spec-iterations').textContent = iterations.toLocaleString('en-US');
+        $('spec-time').textContent =
+          elapsedMs === undefined ? 'an earlier visit' : `${Math.round(elapsedMs)} ms`;
+        $('specs').hidden = false;
         $('info').textContent =
-          `AES-256-GCM, envelope version ${version}, key derived with ` +
-          `${iterations.toLocaleString('en-US')} rounds of PBKDF2-SHA-256, bound to its storage key.` +
-          timing;
+          'The encrypted value is bound to its storage key. Open DevTools, Application, Local Storage to see the same two entries.';
       }
 
       function log(label, ok, detail) {
         const item = document.createElement('li');
         const title = document.createElement('strong');
         title.textContent = label;
+        const badge = document.createElement('span');
+        badge.className = `badge ${ok ? 'ok' : 'bad'}`;
+        badge.textContent = ok ? 'Returned' : 'Refused';
         const result = document.createElement('span');
-        result.className = `mono ${ok ? 'ok' : 'bad'}`;
+        result.className = 'mono';
         result.textContent = detail;
-        item.append(title, result);
+        item.append(title, badge, result);
         $('log').prepend(item);
       }
 
       async function read(label, key, password) {
         try {
           const value = await storage.getSecure(key, password);
-          log(label, true, `returned ${JSON.stringify(value)}`);
+          log(label, true, JSON.stringify(value));
         } catch (error) {
           if (!isCryptoBoxError(error)) throw error;
-          log(label, false, `threw CryptoBoxError ${error.code}`);
+          log(label, false, `CryptoBoxError ${error.code}`);
         }
       }
 
@@ -487,6 +1006,16 @@
           }
         });
       }
+
+      $('copy').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText($('install').textContent);
+          $('copy').textContent = 'Copied';
+        } catch {
+          $('copy').textContent = 'Select it';
+        }
+        setTimeout(() => ($('copy').textContent = 'Copy'), 1600);
+      });
 
       try {
         render();
