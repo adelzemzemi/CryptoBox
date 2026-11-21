@@ -6,10 +6,26 @@
     <title>Your encrypted localStorage values can be swapped</title>
     <meta
       name="description"
-      content="Authenticated encryption rejects a modified value. It says nothing about a value that was moved. How I found that gap in my own library, and how AES-GCM closes it without storing a single extra byte."
+      content="Authenticated encryption rejects a modified value, not a moved one. How I found that gap in my own library, and how AES-GCM closes it with no extra byte."
     />
     <meta name="author" content="Adel Zemzemi" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "Your encrypted localStorage values can be swapped",
+        "datePublished": "2026-11-20",
+        "url": "https://adelzemzemi.github.io/CryptoBox/swapped-ciphertexts/",
+        "mainEntityOfPage": "https://adelzemzemi.github.io/CryptoBox/swapped-ciphertexts/",
+        "image": "https://raw.githubusercontent.com/adelzemzemi/CryptoBox/main/.github/assets/header-dark.webp",
+        "author": { "@type": "Person", "name": "Adel Zemzemi", "url": "https://adelzemzemi.com" }
+      }
+    </script>
     <link rel="canonical" href="https://adelzemzemi.github.io/CryptoBox/swapped-ciphertexts/" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d7a70' stroke-width='2'%3E%3Crect x='4' y='10' width='16' height='11' rx='3'/%3E%3Cpath d='M8 10V7a4 4 0 0 1 8 0v3' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
     <meta property="og:type" content="article" />
     <meta property="og:title" content="Your encrypted localStorage values can be swapped" />
     <meta
@@ -27,134 +43,379 @@
     <meta name="twitter:card" content="summary_large_image" />
     <style>
       :root {
-        --bg: #f4f7f8;
-        --ink: #0f172a;
-        --muted: #55637a;
-        --line: #d9e1e6;
-        --accent: #0f766e;
-        --panel: #0f172a;
-        --panel-ink: #e2e8f0;
-        --chip: #e3ecee;
+        --bg: #fafbfc;
+        --surface: #ffffff;
+        --sunken: #f3f5f7;
+        --ink: #0b1220;
+        --muted: #5b6678;
+        --faint: #8491a3;
+        --line: #e4e8ee;
+        --line-strong: #d3d9e2;
+        --accent: #0d7a70;
+        --accent-soft: #e6f4f2;
+        --accent-ink: #ffffff;
+        --panel: #0b1220;
+        --panel-line: #1b2536;
+        --panel-ink: #dfe6f0;
+        --panel-muted: #8391a7;
+        --panel-accent: #5eead4;
+        --panel-warn: #fbbf77;
+        --ok: #0d7a70;
+        --ok-soft: #e6f4f2;
+        --bad: #b42318;
+        --bad-soft: #fdecea;
+        --shadow: 0 1px 2px rgb(11 18 32 / 4%), 0 8px 24px -12px rgb(11 18 32 / 12%);
+        --radius: 14px;
+        --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #0b1120;
-          --ink: #e8eef6;
-          --muted: #9aa8bd;
-          --line: #24304a;
+          --bg: #080d18;
+          --surface: #0e1524;
+          --sunken: #0a101c;
+          --ink: #e9eef6;
+          --muted: #9aa7ba;
+          --faint: #6f7d92;
+          --line: #1c2638;
+          --line-strong: #2a3650;
           --accent: #5eead4;
-          --panel: #060b16;
-          --chip: #1a2540;
+          --accent-soft: #0f2a2b;
+          --accent-ink: #052b27;
+          --panel: #050912;
+          --panel-line: #161f30;
+          --ok: #5eead4;
+          --ok-soft: #0f2a2b;
+          --bad: #ff9c8f;
+          --bad-soft: #33161a;
+          --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px -16px rgb(0 0 0 / 60%);
         }
       }
-      * {
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
       }
       body {
         margin: 0;
         background: var(--bg);
         color: var(--ink);
         font:
-          18px/1.65 Inter,
+          16px/1.6 Inter,
           system-ui,
           -apple-system,
           'Segoe UI',
+          Roboto,
           sans-serif;
-      }
-      main {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 48px 16px 72px;
-      }
-      .eyebrow,
-      code,
-      pre {
-        font-family: Menlo, ui-monospace, SFMono-Regular, Consolas, monospace;
-      }
-      .eyebrow {
-        font-size: 12px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--accent);
-      }
-      .eyebrow a {
-        text-decoration: none;
-      }
-      h1 {
-        margin: 14px 0 12px;
-        font-size: clamp(32px, 6vw, 46px);
-        line-height: 1.08;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-      }
-      .byline {
-        color: var(--muted);
-        font-size: 15px;
-        margin: 0 0 36px;
-        padding-bottom: 24px;
-        border-bottom: 1px solid var(--line);
-      }
-      h2 {
-        font-size: 24px;
-        line-height: 1.25;
-        letter-spacing: -0.01em;
-        margin: 48px 0 12px;
-      }
-      p,
-      ul {
-        margin: 0 0 18px;
-      }
-      li {
-        margin-bottom: 8px;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
       }
       a {
-        color: var(--accent);
+        color: inherit;
+        text-decoration: none;
+      }
+      code,
+      pre,
+      .mono {
+        font-family: var(--mono);
+      }
+      .wrap {
+        width: min(1040px, 100% - 40px);
+        margin-inline: auto;
       }
       a:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
+        border-radius: 6px;
       }
-      code {
-        font-size: 0.86em;
-        background: var(--chip);
+
+      /* Top bar */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: color-mix(in srgb, var(--bg) 82%, transparent);
+        backdrop-filter: saturate(160%) blur(12px);
+        border-bottom: 1px solid var(--line);
+      }
+      .topbar .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        height: 60px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+      .brand svg {
+        width: 22px;
+        height: 22px;
+        color: var(--accent);
+      }
+      .brand small {
+        font: 500 11px/1 var(--mono);
+        color: var(--muted);
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        padding: 4px 8px;
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .nav a {
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition:
+          color 0.15s,
+          background 0.15s;
+      }
+      .nav a:hover {
+        color: var(--ink);
+        background: var(--sunken);
+      }
+      .nav a.cta {
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+        margin-left: 6px;
+      }
+
+      /* Article */
+      article {
+        width: min(720px, 100% - 40px);
+        margin-inline: auto;
+        padding: 64px 0 72px;
+        font-size: 18px;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font: 500 12px/1 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .eyebrow::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      h1 {
+        margin: 18px 0 20px;
+        font-size: clamp(34px, 6vw, 52px);
+        line-height: 1.06;
+        font-weight: 650;
+        letter-spacing: -0.035em;
+        text-wrap: balance;
+      }
+      .byline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        align-items: center;
+        margin: 0 0 40px;
+        padding-bottom: 28px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .byline strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .byline span[aria-hidden] {
+        color: var(--faint);
+      }
+      article h2 {
+        margin: 56px 0 14px;
+        font-size: 26px;
+        line-height: 1.2;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      article p,
+      article ul {
+        margin: 0 0 20px;
+        text-wrap: pretty;
+      }
+      article ul {
+        padding-left: 22px;
+      }
+      article li {
+        margin-bottom: 10px;
+      }
+      article li::marker {
+        color: var(--accent);
+      }
+      article a {
+        color: var(--accent);
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+      article code {
         padding: 2px 6px;
-        border-radius: 5px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--sunken);
+        font-size: 0.84em;
       }
-      pre {
+      article pre {
+        margin: 0 0 26px;
+        padding: 20px;
+        overflow-x: auto;
         background: var(--panel);
         color: var(--panel-ink);
+        border: 1px solid var(--panel-line);
         border-radius: 12px;
-        padding: 18px;
-        overflow-x: auto;
-        font-size: 14px;
-        line-height: 1.6;
-        margin: 0 0 22px;
+        box-shadow: var(--shadow);
+        font-size: 13.5px;
+        line-height: 1.7;
+        tab-size: 2;
       }
-      pre code {
-        background: none;
+      article pre code {
         padding: 0;
+        border: 0;
+        background: none;
         font-size: inherit;
+      }
+      .next {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px 24px;
+        margin-top: 48px;
+        padding: 24px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        font-size: 16px;
+      }
+      .next p {
+        margin: 0;
+        color: var(--muted);
+      }
+      .next strong {
+        display: block;
+        color: var(--ink);
+      }
+      .next a {
+        flex: none;
+        padding: 11px 18px;
+        border-radius: 10px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      /* Footer */
+      footer {
+        border-top: 1px solid var(--line);
+        font-size: 14px;
+        color: var(--muted);
+      }
+      footer .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px 24px;
+        padding-block: 28px;
+      }
+      footer nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+      }
+      footer a:hover {
+        color: var(--ink);
+      }
+
+      @media (max-width: 720px) {
+        .wrap,
+        article {
+          width: min(720px, 100% - 32px);
+        }
+        article {
+          padding: 40px 0 56px;
+          font-size: 17px;
+        }
+        .nav a:not(.cta) {
+          display: none;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
       }
     </style>
   </head>
   <body>
+    <header class="topbar">
+      <div class="wrap">
+        <a class="brand" href="../" aria-label="CryptoBox demo">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <rect x="4" y="10" width="16" height="11" rx="3" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke-linecap="round" />
+          </svg>
+          CryptoBox <small>notes</small>
+        </a>
+        <nav class="nav" aria-label="Project">
+          <a href="../">Live demo</a>
+          <a href="https://www.npmjs.com/package/@azemzemi/cryptobox">npm</a>
+          <a class="cta" href="https://github.com/adelzemzemi/CryptoBox">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
     <main>
-      <div class="eyebrow"><a href="../">CryptoBox</a> / notes</div>
-      <h1>Your encrypted localStorage values can be swapped</h1>
-      <p class="byline">
-        Adel Zemzemi, 20 November 2026. About
-        <a href="https://github.com/adelzemzemi/CryptoBox">CryptoBox</a> 2.0.
-      </p>
-      <p>
-        I maintain a small library that encrypts what a web app keeps in <code>localStorage</code>.
-        It uses AES-256-GCM, so a stored value that has been modified is rejected rather than
-        returned. For a year I read that sentence as &quot;the stored data cannot be tampered
-        with&quot;.
-      </p>
-      <p>It can. Not by changing a value: by moving one.</p>
-      <h2>The attack</h2>
-      <p>Two values, same password, two keys:</p>
-      <pre><code>import { SecureStorage, MemoryStorage, AesGcmEncryptor } from &#39;@azemzemi/cryptobox&#39;;
+      <article>
+        <div class="eyebrow">Notes</div>
+        <h1>Your encrypted localStorage values can be swapped</h1>
+        <p class="byline">
+          <strong>Adel Zemzemi</strong><span aria-hidden="true">/</span>
+          <time datetime="2026-11-20">20 November 2026</time><span aria-hidden="true">/</span>4 min
+          read<span aria-hidden="true">/</span>About
+          <a href="https://github.com/adelzemzemi/CryptoBox">CryptoBox</a> 2.0
+        </p>
+        <p>
+          I maintain a small library that encrypts what a web app keeps in
+          <code>localStorage</code>. It uses AES-256-GCM, so a stored value that has been modified
+          is rejected rather than returned. For a year I read that sentence as &quot;the stored data
+          cannot be tampered with&quot;.
+        </p>
+        <p>It can. Not by changing a value: by moving one.</p>
+        <h2>The attack</h2>
+        <p>Two values, same password, two keys:</p>
+        <pre><code>import { SecureStorage, MemoryStorage, AesGcmEncryptor } from &#39;@azemzemi/cryptobox&#39;;
 
 const backend = new MemoryStorage();
 const storage = new SecureStorage(backend, new AesGcmEncryptor(), { bindToKey: false });
@@ -162,124 +423,145 @@ const storage = new SecureStorage(backend, new AesGcmEncryptor(), { bindToKey: f
 await storage.setSecure(&#39;role:guest&#39;, { admin: false }, password);
 await storage.setSecure(&#39;role:admin&#39;, { admin: true }, password);
 </code></pre>
-      <p>
-        Now play the attacker. You do not know the password. You cannot read either value, and you
-        cannot forge a new one. You can only write to the store, so you copy one ciphertext over the
-        other:
-      </p>
-      <pre><code>await backend.setItem(&#39;role:guest&#39;, await backend.getItem(&#39;role:admin&#39;));
+        <p>
+          Now play the attacker. You do not know the password. You cannot read either value, and you
+          cannot forge a new one. You can only write to the store, so you copy one ciphertext over
+          the other:
+        </p>
+        <pre><code>await backend.setItem(&#39;role:guest&#39;, await backend.getItem(&#39;role:admin&#39;));
 
 await storage.getSecure(&#39;role:guest&#39;, password); // { admin: true }
 </code></pre>
-      <p>
-        No error. The ciphertext is authentic: it was produced with the right key and no bit of it
-        changed. GCM did its job. The library returned a value that is perfectly valid and sits in
-        the wrong place.
-      </p>
-      <p>
-        <code>{ bindToKey: false }</code> above reproduces what version 1 did everywhere. Nothing in
-        the ciphertext knew which storage key it belonged to.
-      </p>
-      <h2>Who can write to your storage without your password</h2>
-      <p>
-        This is the right question to ask before caring. An attacker who runs script in your page
-        (XSS, a compromised dependency) does not need this trick: they see the password when it is
-        typed and the plaintext when it is decrypted. No storage encryption helps there.
-      </p>
-      <p>
-        The swap matters for the cases storage encryption is actually for, where someone reaches the
-        bytes but not the running application:
-      </p>
-      <ul>
-        <li>a copied or restored browser profile,</li>
-        <li>a synced storage area or a backup,</li>
-        <li>a shared device,</li>
-        <li>a server-side key-value store or a database dump, if you use the same format there.</li>
-      </ul>
-      <p>
-        In all of them the promise &quot;they cannot read it and they cannot change it&quot; was
-        only half true. They could rearrange it.
-      </p>
-      <h2>The fix: tell the cipher where the value lives</h2>
-      <p>
-        AES-GCM takes a second input next to the plaintext, the additional authenticated data. It is
-        not encrypted and not stored. It is mixed into the authentication tag, and decryption fails
-        unless the reader supplies exactly the same bytes.
-      </p>
-      <p>So the storage key goes in there:</p>
-      <pre><code>// write
+        <p>
+          No error. The ciphertext is authentic: it was produced with the right key and no bit of it
+          changed. GCM did its job. The library returned a value that is perfectly valid and sits in
+          the wrong place.
+        </p>
+        <p>
+          <code>{ bindToKey: false }</code> above reproduces what version 1 did everywhere. Nothing
+          in the ciphertext knew which storage key it belonged to.
+        </p>
+        <h2>Who can write to your storage without your password</h2>
+        <p>
+          This is the right question to ask before caring. An attacker who runs script in your page
+          (XSS, a compromised dependency) does not need this trick: they see the password when it is
+          typed and the plaintext when it is decrypted. No storage encryption helps there.
+        </p>
+        <p>
+          The swap matters for the cases storage encryption is actually for, where someone reaches
+          the bytes but not the running application:
+        </p>
+        <ul>
+          <li>a copied or restored browser profile,</li>
+          <li>a synced storage area or a backup,</li>
+          <li>a shared device,</li>
+          <li>
+            a server-side key-value store or a database dump, if you use the same format there.
+          </li>
+        </ul>
+        <p>
+          In all of them the promise &quot;they cannot read it and they cannot change it&quot; was
+          only half true. They could rearrange it.
+        </p>
+        <h2>The fix: tell the cipher where the value lives</h2>
+        <p>
+          AES-GCM takes a second input next to the plaintext, the additional authenticated data. It
+          is not encrypted and not stored. It is mixed into the authentication tag, and decryption
+          fails unless the reader supplies exactly the same bytes.
+        </p>
+        <p>So the storage key goes in there:</p>
+        <pre><code>// write
 crypto.subtle.encrypt({ name: &#39;AES-GCM&#39;, iv, additionalData: header + &#39;role:admin&#39; }, key, data);
 
 // read, under the key the value was found at
 crypto.subtle.decrypt({ name: &#39;AES-GCM&#39;, iv, additionalData: header + &#39;role:guest&#39; }, key, data);
 // throws: the tag does not match
 </code></pre>
-      <p>
-        The ciphertext is the same length as before. The binding costs nothing to store, because the
-        reader already knows the key it is reading from.
-      </p>
-      <p>With the default settings in version 2, the same swap ends differently:</p>
-      <pre><code>const storage = new SecureStorage(backend, new AesGcmEncryptor());
+        <p>
+          The ciphertext is the same length as before. The binding costs nothing to store, because
+          the reader already knows the key it is reading from.
+        </p>
+        <p>With the default settings in version 2, the same swap ends differently:</p>
+        <pre><code>const storage = new SecureStorage(backend, new AesGcmEncryptor());
 
 // same writes, same copy
 await storage.getSecure(&#39;role:guest&#39;, password); // CryptoBoxError: DECRYPTION_FAILED
 </code></pre>
-      <p>
-        The same mechanism authenticates the envelope header, which records the format version and
-        the PBKDF2 iteration count. Lowering the count in a stored value, to make the password
-        cheaper to guess later, now breaks the tag too.
-      </p>
-      <h2>What it still does not do</h2>
-      <p>Binding to the key stops a value from being moved. It does not stop these:</p>
-      <ul>
-        <li>
-          <strong>Rollback.</strong> Yesterday&#39;s value for the same key, put back in place,
-          still decrypts. The format has no notion of freshness. If that matters, keep a counter or
-          a timestamp inside the payload.
-        </li>
-        <li>
-          <strong>Deletion.</strong> Whoever can write can also erase. Tampering is detected, not
-          prevented.
-        </li>
-        <li>
-          <strong>Old data.</strong> Values written by version 1 carry no binding. They stay movable
-          until you rewrite them, and the library keeps accepting them until you tell it to stop.
-          Migration is one call per key, then one option to close the door.
-        </li>
-      </ul>
-      <p>
-        And the library has not been audited by a third party. What it has instead is a second
-        implementation: the test suite writes and reads the same format with OpenSSL through
-        <code>node:crypto</code>, in both directions, and a set of frozen ciphertexts that must keep
-        decrypting forever.
-      </p>
-      <h2>Try it</h2>
-      <p>
-        There is a page where you can do this to your own browser: store a value, look at what
-        <code>localStorage</code> holds, then read it back with the wrong password, after flipping
-        one bit, and after moving it to another key.
-      </p>
-      <ul>
-        <li>
-          Demo:
-          <a href="https://adelzemzemi.github.io/CryptoBox/"
-            >https://adelzemzemi.github.io/CryptoBox/</a
-          >
-        </li>
-        <li>
-          Source:
-          <a href="https://github.com/adelzemzemi/CryptoBox"
-            >https://github.com/adelzemzemi/CryptoBox</a
-          >
-        </li>
-        <li>
-          <code>npm install @azemzemi/cryptobox</code> (zero dependencies, about 6.5 kB gzipped)
-        </li>
-      </ul>
-      <p>
-        If you encrypt anything keyed by a name, an id or a path, check what your ciphertext knows
-        about where it lives. Mine knew nothing.
-      </p>
+        <p>
+          The same mechanism authenticates the envelope header, which records the format version and
+          the PBKDF2 iteration count. Lowering the count in a stored value, to make the password
+          cheaper to guess later, now breaks the tag too.
+        </p>
+        <h2>What it still does not do</h2>
+        <p>Binding to the key stops a value from being moved. It does not stop these:</p>
+        <ul>
+          <li>
+            <strong>Rollback.</strong> Yesterday&#39;s value for the same key, put back in place,
+            still decrypts. The format has no notion of freshness. If that matters, keep a counter
+            or a timestamp inside the payload.
+          </li>
+          <li>
+            <strong>Deletion.</strong> Whoever can write can also erase. Tampering is detected, not
+            prevented.
+          </li>
+          <li>
+            <strong>Old data.</strong> Values written by version 1 carry no binding. They stay
+            movable until you rewrite them, and the library keeps accepting them until you tell it
+            to stop. Migration is one call per key, then one option to close the door.
+          </li>
+        </ul>
+        <p>
+          And the library has not been audited by a third party. What it has instead is a second
+          implementation: the test suite writes and reads the same format with OpenSSL through
+          <code>node:crypto</code>, in both directions, and a set of frozen ciphertexts that must
+          keep decrypting forever.
+        </p>
+        <h2>Try it</h2>
+        <p>
+          There is a page where you can do this to your own browser: store a value, look at what
+          <code>localStorage</code> holds, then read it back with the wrong password, after flipping
+          one bit, and after moving it to another key.
+        </p>
+        <ul>
+          <li>
+            Demo:
+            <a href="https://adelzemzemi.github.io/CryptoBox/"
+              >https://adelzemzemi.github.io/CryptoBox/</a
+            >
+          </li>
+          <li>
+            Source:
+            <a href="https://github.com/adelzemzemi/CryptoBox"
+              >https://github.com/adelzemzemi/CryptoBox</a
+            >
+          </li>
+          <li>
+            <code>npm install @azemzemi/cryptobox</code> (zero dependencies, about 6.5 kB gzipped)
+          </li>
+        </ul>
+        <p>
+          If you encrypt anything keyed by a name, an id or a path, check what your ciphertext knows
+          about where it lives. Mine knew nothing.
+        </p>
+        <aside class="next">
+          <p>
+            <strong>Try the swap in your own tab</strong>
+            Store a value, flip a bit, move it to another key.
+          </p>
+          <a href="../">Open the live demo</a>
+        </aside>
+      </article>
     </main>
+
+    <footer>
+      <div class="wrap">
+        <span>CryptoBox, MIT licensed. Built by Adel Zemzemi.</span>
+        <nav aria-label="Links">
+          <a href="https://github.com/adelzemzemi/CryptoBox">Source and documentation</a>
+          <a href="../">Live demo</a>
+          <a href="https://github.com/adelzemzemi/CryptoBox/blob/main/CHANGELOG.md">Changelog</a>
+        </nav>
+      </div>
+    </footer>
   </body>
 </html>
