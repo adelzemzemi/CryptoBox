@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- The author link in the package metadata now points to https://adelzemzemi.com/ instead of the
+  GitHub profile. No code is affected; npm shows the new link from the next published release.
+
 ## [2.1.1] - 2026-11-20
 
 ### Fixed
